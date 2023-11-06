@@ -1,0 +1,6 @@
+<resources>
+    <dimen name="tab_icon_size">27dp</dimen>
+    <dimen name="chat_edittext_height">40dp</dimen>
+    <dimen name="chat_edittext_width">280dp</dimen>
+    <dimen name="chat_edittext_width_expanded">320dp</dimen>
+</resources>
