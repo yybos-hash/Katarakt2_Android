@@ -2,12 +2,12 @@ package yybos.hash.katarakt2.Socket;
 
 import com.google.gson.Gson;
 
-import yybos.hash.katarakt2.Socket.Objects.Message;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+
+import yybos.hash.katarakt2.Socket.Objects.Message;
 
 public class Utils {
     public Socket client;
@@ -67,12 +67,12 @@ public class Utils {
 
     public void close () {
         try {
+            in.close();
+            out.close();
+
             client.close();
             client.shutdownOutput();
             client.shutdownInput();
-
-            in.close();
-            out.close();
         }
         catch (Exception e) {
             System.out.println(e.getMessage());

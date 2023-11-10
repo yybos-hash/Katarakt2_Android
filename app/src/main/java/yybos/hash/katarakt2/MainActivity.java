@@ -9,24 +9,30 @@ import android.widget.ImageView;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentTransaction;
-import androidx.lifecycle.LiveData;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import yybos.hash.katarakt2.Fragments.ChatFragment;
+import yybos.hash.katarakt2.Fragments.LoginFragment;
 import yybos.hash.katarakt2.Fragments.SettingsFragment;
-import yybos.hash.katarakt2.Fragments.ViewModels.ChatViewModel;
 import yybos.hash.katarakt2.Socket.Client;
+import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
 import yybos.hash.katarakt2.Socket.Objects.Message;
 
 public class MainActivity extends AppCompatActivity {
     private View selectedTab;
     private View selectionTab;
+
     private ImageView buttonChat;
     private ImageView buttonSettings;
+    private ImageView buttonLogin;
 
     private Client client;
-    private ChatViewModel history;
+    private List<Message> history;
+
+    private String loginUsername;
+    private String loginPassword;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,15 +44,18 @@ public class MainActivity extends AppCompatActivity {
             actionBar.hide();
 
         selectionTab = findViewById(R.id.selectionTab);
+
         buttonChat = findViewById(R.id.buttonChat);
         buttonSettings = findViewById(R.id.buttonSettings);
+        buttonLogin = findViewById(R.id.buttonLogin);
 
         selectedTab = null;
 
         buttonChat.setOnClickListener(this::tabPressed);
         buttonSettings.setOnClickListener(this::tabPressed);
+        buttonLogin.setOnClickListener(this::tabPressed);
 
-        this.history = new ChatViewModel();
+        this.history = new ArrayList<>();
         this.client = new Client(this.history);
 
         Thread t1 = new Thread(client::connect);
@@ -61,33 +70,48 @@ public class MainActivity extends AppCompatActivity {
         fragmentManager.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out, R.anim.fragment_fade_in, R.anim.fragment_fade_out);
 
         ValueAnimator anim;
-        if (view == buttonChat) {
-            anim = ObjectAnimator.ofFloat(selectionTab.getX(), view.getX() - 60);
-            selectedTab = buttonChat;
+        anim = ObjectAnimator.ofFloat(selectedTab != null ? (selectedTab.getX() - 55) : view.getX(), view.getX() - 55);
+        //                                              :Sex_Penis:
 
-            ChatFragment newFragment = new ChatFragment();
-            fragmentManager.replace(R.id.fragmentContainerView, newFragment);
-        }
-        else {
-            anim = ObjectAnimator.ofFloat(selectionTab.getX(), view.getX() - 60);
-            selectedTab = buttonSettings;
+        selectedTab = view;
 
-            SettingsFragment newFragment = new SettingsFragment();
-            fragmentManager.replace(R.id.fragmentContainerView, newFragment);
-        }
+        if (view == buttonChat)
+            fragmentManager.replace(R.id.fragmentContainerView, new ChatFragment());
+
+        else if (view == buttonSettings)
+            fragmentManager.replace(R.id.fragmentContainerView, new SettingsFragment());
+
+        else if (view == buttonLogin)
+            fragmentManager.replace(R.id.fragmentContainerView, new LoginFragment());
+
 
         fragmentManager.addToBackStack(null).commit();
 
-        anim.addUpdateListener(valueAnimator -> {
-            selectionTab.setX((float) valueAnimator.getAnimatedValue());
-        });
+        anim.addUpdateListener(valueAnimator -> selectionTab.setX((float) valueAnimator.getAnimatedValue()));
         anim.start();
     }
 
-    public Client getClientConnection () {
-        return this.client;
+    // login
+
+    public void setLoginUsername (String username) {
+        this.loginUsername = username;
     }
-    public ChatViewModel getViewModel () {
+    public void setLoginPassword (String password) {
+        this.loginPassword = password;
+    }
+
+    // message history
+
+    public List<Message> getHistory () {
         return this.history;
+    }
+
+    // client listener
+
+    public void addListener (ClientInterface clientInterface) {
+        this.client.addMessageListener(clientInterface);
+    }
+    public void removeListener (ClientInterface clientInterface) {
+        this.client.removeMessageListener(clientInterface);
     }
 }

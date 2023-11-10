@@ -2,24 +2,24 @@ package yybos.hash.katarakt2.Socket;
 
 import android.util.Log;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
-import yybos.hash.katarakt2.Fragments.ViewModels.ChatViewModel;
+import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
 import yybos.hash.katarakt2.Socket.Objects.Message;
 
 public class Client {
-    private final ChatViewModel history;
+    private final List<Message> history;
+    private final List<ClientInterface> listeners = new ArrayList<>();
 
     private Utils messageUtils;
     private Utils mediaUtils;
     private Utils logUtils;
 
-    public Client (ChatViewModel history) {
+    public Client (List<Message> history) {
         this.history = history;
     }
 
@@ -35,21 +35,21 @@ public class Client {
             SocketAddress logAddress = new InetSocketAddress(Constants.server, Constants.logPort);
 
             messageSocket.connect(messageAddress, 4500);
-//            downloadSocket.connect(downloadAddress, 4500);
+//            mediaSocket.connect(downloadAddress, 4500);
 //            logSocket.connect(logAddress, 4500);
             // connect the clients
 
             // set the threads
             Thread messageThread = new Thread(() -> handleMessage(messageSocket));
-//            Thread downloadThread = new Thread(() -> handleDownload(downloadSocket));
+//            Thread mediaThread = new Thread(() -> handleDownload(downloadSocket));
 //            Thread logThread = new Thread(() -> handleLog(logSocket));
 
             // start the threads
             messageThread.start();
-//            downloadThread.start();
+//            mediaThread.start();
 //            logThread.start();
         } catch (Exception e) {
-            Log.i("Client Connection", e.getMessage());
+            Log.i("Client Connection", "Deu meme");
         }
     }
 
@@ -105,8 +105,10 @@ public class Client {
                     // parse raw message
                     message = Message.fromString(rawMessage.toString().replace("\0", ""));
 
-                    // notify the message for the listeners to deal with
-                    this.history.addMessage(message);
+                    // append message to history
+                    this.history.add(message);
+                    this.notifyMessageToListeners(message);
+                    // notify message to listeners (chatFragment)
                 }
             }
             catch (Exception e) {
@@ -138,5 +140,19 @@ public class Client {
             return;
 
         this.messageUtils.sendMessage(message);
+    }
+
+    // listeners
+
+    public void addMessageListener (ClientInterface clientInterface) {
+        this.listeners.add(clientInterface);
+    }
+    public void removeMessageListener (ClientInterface clientInterface) {
+        this.listeners.remove(clientInterface);
+    }
+
+    private void notifyMessageToListeners (Message message) {
+        for (ClientInterface listener : this.listeners)
+            listener.onMessageReceived(message);
     }
 }

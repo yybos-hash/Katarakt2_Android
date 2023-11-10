@@ -44,7 +44,8 @@
             android:layout_height="match_parent"
             android:background="@drawable/fragment_selector"
             android:layout_marginStart="3dp"
-            android:layout_marginTop="4dp"/>
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="8dp"/>
 
         <LinearLayout
             android:layout_width="match_parent"

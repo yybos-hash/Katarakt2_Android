@@ -1,11 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="backgroundColor">#2B2B2B</color>
+    <color name="backgroundColor">#151A25</color>
     <color name="foregroundColor">#C2C2BA</color>
     <color name="primaryColor">#171717</color>
-    <color name="secondaryColor">#272727</color>
+    <color name="secondaryColor">#0C111C</color>
     <color name="absoluteBlack">#000000</color>
+
+    <color name="edittextColor">#202839</color>
+    <color name="textViewColor">#E7ECEF</color>
+
+    <!--  view's color  -->
+
     <color name="usernameColor">#7E7E7E</color>
     <color name="dateColor">#7A7A7A</color>
     <color name="messageColor">#B5B5B5</color>
+
+    <color name="activityBottomBarColor">@color/secondaryColor</color>
+
+    <color name="loginEdittextColor">@color/edittextColor</color>
+    <color name="loginEdittextHintColor">#7A7A7A</color>
+    <color name="loginTextViewColor">#C2C2BA</color>
+    <color name="loginButtonTextColor">#C2C2BA</color>
+    <color name="loginButtonColor">@color/edittextColor</color>
+    <color name="loginBoxColor">#242C3E</color>
+
+    <color name="chatEdittextColor">@color/edittextColor</color>
+    <color name="chatEdittextHintColor">#7A7A7A</color>
+
+    <color name="configTextViewColor">#C2C2BA</color>
+    <color name="configEdittextColor">@color/edittextColor</color>
+    <color name="configEdittextHintColor">#7A7A7A</color>
 </resources>

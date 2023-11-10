@@ -4,13 +4,14 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/backgroundColor"
     tools:context=".MainActivity">
 
     <LinearLayout
         android:id="@+id/linearLayout"
         android:layout_width="0dp"
         android:layout_height="45dp"
-        android:background="@color/secondaryColor"
+        android:background="@color/activityBottomBarColor"
         android:gravity="center_horizontal|center_vertical"
         android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -35,6 +36,15 @@
             android:src="@drawable/settings_icon"
             tools:ignore="TouchTargetSizeCheck" />
 
+        <ImageView
+            android:id="@+id/buttonLogin"
+            android:layout_width="@dimen/tab_icon_size"
+            android:layout_height="@dimen/tab_icon_size"
+            android:layout_marginHorizontal="50dp"
+            android:contentDescription="@string/todo"
+            android:src="@drawable/login_icon"
+            tools:ignore="TouchTargetSizeCheck" />
+
     </LinearLayout>
 
     <View
@@ -42,7 +52,7 @@
         android:layout_width="match_parent"
         android:layout_height="1px"
         android:layout_weight="1"
-        android:background="@color/absoluteBlack"
+        android:background="@color/primaryColor"
         app:layout_constraintBottom_toTopOf="@+id/linearLayout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
