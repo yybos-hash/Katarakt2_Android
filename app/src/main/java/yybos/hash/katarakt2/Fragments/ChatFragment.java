@@ -1,14 +1,18 @@
 package yybos.hash.katarakt2.Fragments;
 
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
-import android.widget.LinearLayout;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -19,15 +23,24 @@ import java.util.List;
 import yybos.hash.katarakt2.Fragments.Adapters.ChatViewAdapter;
 import yybos.hash.katarakt2.MainActivity;
 import yybos.hash.katarakt2.R;
+import yybos.hash.katarakt2.Socket.Client;
 import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
 import yybos.hash.katarakt2.Socket.Objects.Message;
 
 public class ChatFragment extends Fragment implements ClientInterface {
-    private EditText editText;
+    private ConstraintLayout constraintLayout;
 
-    private LinearLayout chatLinearLayout;
+    private FrameLayout generalFrameLayout; // used for displaying things on the screen
+
+    private EditText editText;
+    private ImageView chatsButton;
+    private RecyclerView recyclerView;
+
     private ChatViewAdapter chatAdapter;
     private List<Message> history;
+
+    private MainActivity mainActivityInstance;
+    private Client client;
 
     public ChatFragment() {
         // Required empty public constructor
@@ -37,11 +50,16 @@ public class ChatFragment extends Fragment implements ClientInterface {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        this.mainActivityInstance = ((MainActivity) requireActivity());
+
+        // get client for sending messages, connecting, etc
+        this.client = this.mainActivityInstance.getClient();
+
         // get message history if there are any messages previously sent
-        this.history = ((MainActivity) requireActivity()).getHistory();
+        this.history = this.mainActivityInstance.getHistory();
 
         // listen to incoming messages
-        ((MainActivity) requireActivity()).addListener(this);
+        this.mainActivityInstance.addListener(this);
     }
 
     @Override
@@ -55,31 +73,113 @@ public class ChatFragment extends Fragment implements ClientInterface {
         if (getView() == null)
             return;
 
-        View rootView = getView();
+        View root = getView();
 
-        this.chatLinearLayout = rootView.findViewById(R.id.chatLinearLayout);
-        this.editText = rootView.findViewById(R.id.chatEditText);
+        // move selection tab (I'm doing it from the fragment cause it will fix the issue where if I used the back stack trace the selectionTab wouldnt move)
+        this.mainActivityInstance.moveSelectionTab(this);
+
+        this.constraintLayout = root.findViewById(R.id.chatConstraintLayout);
+
+        this.editText = root.findViewById(R.id.chatEditText);
+        this.chatsButton = root.findViewById(R.id.chatChatsButton);
 
         this.chatAdapter = new ChatViewAdapter(this.history);
 
-        RecyclerView recyclerView = rootView.findViewById(R.id.chatRecycler);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        recyclerView.setAdapter(this.chatAdapter);
-        recyclerView.setOverScrollMode(View.OVER_SCROLL_NEVER);
+        this.chatsButton.setOnClickListener(this::displayChatsList);
+
+        this.recyclerView = root.findViewById(R.id.chatRecycler);
+        this.recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        this.recyclerView.setAdapter(this.chatAdapter);
+        this.recyclerView.setOverScrollMode(View.OVER_SCROLL_NEVER);
         // get rid of that 'wave' effect when trying to scroll beyond the limits of the linearLayout
+
+        if (!this.client.isConnected())
+            displayErrorMessage("Oh Noes!", "It looks like you are not connected. CONNECT, BITCH", "Ok :(", "Shut the fuck up");
+    }
+
+    // display list of chats
+    public void displayChatsList (View v) {
+        if (this.getContext() == null)
+            return;
+
+        // create frame layout for popup fragment
+        this.generalFrameLayout = new FrameLayout(this.getContext());
+        this.generalFrameLayout.setId(View.generateViewId());
+
+        FrameLayout.LayoutParams fragmentFrameLayout = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        fragmentFrameLayout.gravity = Gravity.END;
+
+        // add fragment to frame layout
+        ChatsFragment fragment = new ChatsFragment();
+
+        // initiate fragment manager and
+        FragmentTransaction fragmentManager = getParentFragmentManager().beginTransaction();
+
+        fragmentManager.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out, R.anim.fragment_fade_in, R.anim.fragment_fade_out);
+        fragmentManager.add(this.generalFrameLayout.getId(), fragment);
+        fragmentManager.commit();
+
+        // add frame layout to constraintLayout
+        this.constraintLayout.addView(this.generalFrameLayout, fragmentFrameLayout);
+    }
+
+    // display the error popup fragment
+    public void displayErrorMessage (String title, String description, String firstButtonText, String secondButtonText) {
+        if (this.getContext() == null)
+            return;
+
+        // create frame layout for popup fragment
+        this.generalFrameLayout = new FrameLayout(this.getContext());
+        this.generalFrameLayout.setId(View.generateViewId());
+
+        FrameLayout.LayoutParams fragmentFrameLayout = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        fragmentFrameLayout.gravity = Gravity.CENTER;
+
+        // add fragment to frame layout
+        // set args for title, description, etc
+        Bundle args = new Bundle();
+        args.putString("title", title);
+        args.putString("description", description);
+        args.putString("firstButtonText", firstButtonText);
+        args.putString("secondButtonText", secondButtonText);
+
+        PopupErrorFragment fragment = new PopupErrorFragment();
+        fragment.setArguments(args);
+
+        // initiate fragment manager and
+        FragmentTransaction fragmentManager = getParentFragmentManager().beginTransaction();
+
+        fragmentManager.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out, R.anim.fragment_fade_in, R.anim.fragment_fade_out);
+        fragmentManager.add(this.generalFrameLayout.getId(), fragment);
+        fragmentManager.commit();
+
+        // add frame layout to constraintLayout
+        this.constraintLayout.addView(this.generalFrameLayout, fragmentFrameLayout);
+    }
+    public void removePopupFrameLayout () {
+        this.constraintLayout.removeView(this.generalFrameLayout);
     }
 
     // remove listener once the fragment is destroyed
     @Override
     public void onDestroy () {
-        ((MainActivity) requireActivity()).removeListener(this);
+        this.mainActivityInstance.removeListener(this);
 
         super.onDestroy();
     }
 
-    // for receiving messages
+    // messages
     @Override
     public void onMessageReceived(Message message) {
         this.chatAdapter.addMessage(message);
+    }
+
+    public void updateMessageHistory () {
+        this.recyclerView.removeAllViews();
+
+        this.history = this.mainActivityInstance.getHistory();
+
+        this.chatAdapter = new ChatViewAdapter(this.history);
+        this.recyclerView.setAdapter(this.chatAdapter);
     }
 }

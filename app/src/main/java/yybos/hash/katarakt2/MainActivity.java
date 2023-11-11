@@ -8,6 +8,7 @@ import android.widget.ImageView;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
 import java.util.ArrayList;
@@ -18,6 +19,7 @@ import yybos.hash.katarakt2.Fragments.LoginFragment;
 import yybos.hash.katarakt2.Fragments.SettingsFragment;
 import yybos.hash.katarakt2.Socket.Client;
 import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
+import yybos.hash.katarakt2.Socket.Objects.Chat;
 import yybos.hash.katarakt2.Socket.Objects.Message;
 
 public class MainActivity extends AppCompatActivity {
@@ -30,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
 
     private Client client;
     private List<Message> history;
+    private List<Chat> chats;
 
     private String loginUsername;
     private String loginPassword;
@@ -43,11 +46,11 @@ public class MainActivity extends AppCompatActivity {
         if (actionBar != null)
             actionBar.hide();
 
-        selectionTab = findViewById(R.id.selectionTab);
+        selectionTab = findViewById(R.id.activitySelectionTab);
 
-        buttonChat = findViewById(R.id.buttonChat);
-        buttonSettings = findViewById(R.id.buttonSettings);
-        buttonLogin = findViewById(R.id.buttonLogin);
+        buttonChat = findViewById(R.id.activityButtonChat);
+        buttonSettings = findViewById(R.id.activityButtonSettings);
+        buttonLogin = findViewById(R.id.activityButtonLogin);
 
         selectedTab = null;
 
@@ -55,37 +58,52 @@ public class MainActivity extends AppCompatActivity {
         buttonSettings.setOnClickListener(this::tabPressed);
         buttonLogin.setOnClickListener(this::tabPressed);
 
-        this.history = new ArrayList<>();
-        this.client = new Client(this.history);
+        this.loginUsername = "Muriel";
+        this.loginPassword = "123";
 
-        Thread t1 = new Thread(client::connect);
-        t1.start();
+        this.history = new ArrayList<>();
+        this.chats = new ArrayList<>();
+
+        this.client = new Client(this.chats, this.history, this.loginUsername, this.loginPassword);
+
+        this.client.tryConnection();
     }
 
     private void tabPressed (View view) {
-        if (view == selectedTab)
-            return;
-
         FragmentTransaction fragmentManager = getSupportFragmentManager().beginTransaction();
         fragmentManager.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out, R.anim.fragment_fade_in, R.anim.fragment_fade_out);
+
+        if (view == this.buttonChat)                                                  // see more in PopupErrorFragment.java about this tag (onDestroy())
+            fragmentManager.replace(R.id.activityFragmentContainerView, new ChatFragment(), "chatFragmentInstance");
+
+        else if (view == this.buttonSettings)
+            fragmentManager.replace(R.id.activityFragmentContainerView, new SettingsFragment());
+
+        else if (view == this.buttonLogin)
+            fragmentManager.replace(R.id.activityFragmentContainerView, new LoginFragment());
+
+        fragmentManager.addToBackStack(null).commit();
+    }
+    public void moveSelectionTab (Fragment fragment) {
+        View view;
+
+        if (fragment instanceof ChatFragment)
+            view = this.buttonChat;
+
+        else if (fragment instanceof SettingsFragment)
+            view = this.buttonSettings;
+
+        else if (fragment instanceof LoginFragment)
+            view = this.buttonLogin;
+
+        else
+            return;
 
         ValueAnimator anim;
         anim = ObjectAnimator.ofFloat(selectedTab != null ? (selectedTab.getX() - 55) : view.getX(), view.getX() - 55);
         //                                              :Sex_Penis:
 
-        selectedTab = view;
-
-        if (view == buttonChat)
-            fragmentManager.replace(R.id.fragmentContainerView, new ChatFragment());
-
-        else if (view == buttonSettings)
-            fragmentManager.replace(R.id.fragmentContainerView, new SettingsFragment());
-
-        else if (view == buttonLogin)
-            fragmentManager.replace(R.id.fragmentContainerView, new LoginFragment());
-
-
-        fragmentManager.addToBackStack(null).commit();
+        this.selectedTab = view;
 
         anim.addUpdateListener(valueAnimator -> selectionTab.setX((float) valueAnimator.getAnimatedValue()));
         anim.start();
@@ -100,13 +118,26 @@ public class MainActivity extends AppCompatActivity {
         this.loginPassword = password;
     }
 
+    public String getLoginUsername () {
+        return this.loginUsername;
+    }
+    public String getLoginPassword () {
+        return this.loginPassword;
+    }
+
     // message history
 
     public List<Message> getHistory () {
         return this.history;
     }
+    public List<Chat> getChats () {
+        return this.chats;
+    }
 
-    // client listener
+    // client
+    public Client getClient () {
+        return this.client;
+    }
 
     public void addListener (ClientInterface clientInterface) {
         this.client.addMessageListener(clientInterface);

@@ -13,17 +13,8 @@ import androidx.annotation.NonNull;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonSerializer;
 
-import java.lang.reflect.Type;
 import java.sql.Date;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Locale;
 
 public class Message {
     private int id;
@@ -100,9 +91,8 @@ public class Message {
         return from;
     }
     public static Message fromString (String json) {
-        //
-            GsonBuilder gsonBuilder = new GsonBuilder();
-            gsonBuilder.registerTypeAdapter(Date.class, new CustomDateDeserializer());
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        gsonBuilder.registerTypeAdapter(Date.class, new ObjectDateDeserializer());
         //  Basically when gson formats a Date in the sql.Date format it changes the format, so this keeps the it as it should
 
         Gson messageParser = gsonBuilder.create();
@@ -113,7 +103,8 @@ public class Message {
     public enum Type {
         Message(0),
         Command(1),
-        Version(2);
+        Version(2),
+        Chat(3);
 
         private final int value;
 
@@ -144,21 +135,5 @@ public class Message {
                 ",\ndate: " + this.dt +
                 ",\nchat: " + this.chat +
                 ",\nuser: " + this.user + "\n}\n";
-    }
-}
-
-// ignore this. This is here because of that date parser shit on the gson
-class CustomDateDeserializer implements JsonDeserializer<java.sql.Date> {
-    private final SimpleDateFormat customDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
-
-    @Override
-    public Date deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
-        String dateStr = json.getAsString();
-        try {
-            java.util.Date utilDate = customDateFormat.parse(dateStr);
-            return new java.sql.Date(utilDate.getTime());
-        } catch (ParseException e) {
-            throw new JsonParseException(e);
-        }
     }
 }
