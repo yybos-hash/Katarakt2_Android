@@ -1,9 +1,12 @@
 package yybos.hash.katarakt2.Fragments;
 
+import android.animation.ValueAnimator;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.EditText;
 
@@ -49,8 +52,18 @@ public class LoginFragment extends Fragment {
         this.mainActivityInstance.moveSelectionTab(this);
 
         loginButton.setOnClickListener(v -> {
+            this.buttonClickAnimation(v);
             this.mainActivityInstance.setLoginEmail(username.getText().toString());
             this.mainActivityInstance.setLoginPassword(password.getText().toString());
         });
     }
+
+    // button click animation
+    private void buttonClickAnimation (View v) {
+        Animation animation = AnimationUtils.loadAnimation(this.getContext(), R.anim.button_clicked);
+        animation.setRepeatMode(ValueAnimator.REVERSE);
+
+        v.startAnimation(animation);
+    }
+
 }

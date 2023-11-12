@@ -112,7 +112,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // login
-
     public void setLoginEmail(String username) {
         this.loginEmail = username;
     }
@@ -121,7 +120,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // histories
-
     public List<Message> getHistory () {
         return this.history;
     }

@@ -3,6 +3,7 @@ package yybos.hash.katarakt2.Socket;
 import android.os.Looper;
 import android.util.Log;
 
+import java.io.DataInputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -46,7 +47,7 @@ public class Client {
         t1.start();
     }
 
-    public void connect() {
+    private void connect () {
         try {
             Socket messageSocket = new Socket();
             Socket mediaSocket = new Socket();
@@ -81,13 +82,22 @@ public class Client {
         }
     }
 
-    private void handleMessage(Socket client) {
+    private void handleMessage (Socket client) {
         Utils messageUtils = new Utils(client);
         this.messageUtils = messageUtils;
 
         try {
             messageUtils.sendRawMessage(Constants.version + ';' + this.loginEmail + ';' + this.loginPassword);
-            String credentials = new String(Constants.buffer, 0, messageUtils.in.read(new byte[110]), Constants.encoding); // consider using a 110 byte buffer for this, it's the max length of a serialized user object
+
+            // read only the 110 byte sized object (User) from the server
+            byte[] credentialsBytes = new byte[110];
+
+            DataInputStream dis = new DataInputStream(messageUtils.in);
+            dis.readFully(credentialsBytes);
+            // read all the bytes. Apparently this method always existed and couldve facilitate my life a lot
+
+            String credentials = new String(credentialsBytes, Constants.encoding);
+            //
 
             this.user = User.fromString(credentials.replace("\0", ""));
 
@@ -123,7 +133,6 @@ public class Client {
                             return;
 
                         temp = new String(Constants.buffer, 0, packet, Constants.encoding);
-
 
                         // checks for the \0 in the temp
                         if (temp.contains("\0")) {
@@ -167,10 +176,10 @@ public class Client {
             this.isConnected = false;
         }
     }
-    private void handleMedia(Socket client) {
+    private void handleMedia (Socket client) {
 
     }
-    private void handleChats(Socket client) {
+    private void handleChats (Socket client) {
         Utils chatsUtils = new Utils(client);
 
         try {
@@ -243,7 +252,7 @@ public class Client {
         }
     }
     public void sendMessage (Message message) {
-        if (this.messageUtils == null || !this.isConnected)
+        if (this.messageUtils == null || !this.isConnected || message.getContent().trim().isEmpty())
             return;
 
         // checks wheter its on the main thread or not

@@ -73,7 +73,7 @@ public class PopupErrorFragment extends Fragment {
         ChatFragment chatFragmentInstance = ((ChatFragment) getParentFragmentManager().findFragmentByTag("chatFragmentInstance"));
 
         if (chatFragmentInstance != null)
-            chatFragmentInstance.removeGeneralFrameLayout();
+            chatFragmentInstance.closeErrorMessage();
 
         super.onDestroy();
     }
@@ -82,6 +82,7 @@ public class PopupErrorFragment extends Fragment {
 
     private void buttonAction (View view) {
         FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+        transaction.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out);
         transaction.remove(this);
         transaction.commit();
     }

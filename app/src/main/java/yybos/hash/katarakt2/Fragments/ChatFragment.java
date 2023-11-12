@@ -1,11 +1,15 @@
 package yybos.hash.katarakt2.Fragments;
 
+import android.animation.ValueAnimator;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Looper;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -34,9 +38,10 @@ public class ChatFragment extends Fragment implements ClientInterface {
     private FrameLayout generalFrameLayout; // used for displaying things on the screen
 
     private EditText editText;
-    private ImageView sendButton;
-    private ImageView chatsButton;
     private RecyclerView recyclerView;
+
+    private ChatsFragment chatsFragment;
+    private PopupErrorFragment popupErrorFragment;
 
     private ChatViewAdapter chatAdapter;
     private List<Message> history;
@@ -81,15 +86,20 @@ public class ChatFragment extends Fragment implements ClientInterface {
         this.mainActivityInstance.moveSelectionTab(this);
 
         this.constraintLayout = root.findViewById(R.id.chatConstraintLayout);
-
         this.editText = root.findViewById(R.id.chatEditText);
-        this.chatsButton = root.findViewById(R.id.chatChatsButton);
-        this.sendButton = root.findViewById(R.id.chatSendButton);
+        ImageView chatsButton = root.findViewById(R.id.chatChatsButton);
+        ImageView sendButton = root.findViewById(R.id.chatSendButton);
 
-        this.chatAdapter = new ChatViewAdapter(null);
+        this.chatAdapter = new ChatViewAdapter(this.history);
 
-        this.chatsButton.setOnClickListener(this::displayChatsList);
-        this.sendButton.setOnClickListener(this::sendMessage);
+        chatsButton.setOnClickListener((v) -> {
+            this.buttonClickAnimation(v);
+            this.displayChatsList(v);
+        });
+        sendButton.setOnClickListener((v) -> {
+            this.buttonClickAnimation(v);
+            this.sendMessage(v);
+        });
 
         this.recyclerView = root.findViewById(R.id.chatRecycler);
         this.recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -97,23 +107,46 @@ public class ChatFragment extends Fragment implements ClientInterface {
         this.recyclerView.setOverScrollMode(View.OVER_SCROLL_NEVER);
         // get rid of that 'wave' effect when trying to scroll beyond the limits of the linearLayout
 
-        if (!this.client.isConnected())
+        if (this.chatAdapter.getItemCount() > 0)
+            this.scrollToLastMessage();
+
+        if (!this.client.isConnected()) {
             displayErrorMessage("Oh Noes!", "It looks like you are not connected. CONNECT, BITCH", "Ok :(", "Shut the fuck up");
+
+            // clear list of chats and messages
+            this.mainActivityInstance.getChats().clear();
+            this.mainActivityInstance.getHistory().clear();
+
+            this.client.tryConnection();
+        }
     }
 
-    public void sendMessage (View v) {
-        String content = this.editText.getText().toString().trim();
+    // button click animation
+    private void buttonClickAnimation (View v) {
+        Animation animation = AnimationUtils.loadAnimation(this.getContext(), R.anim.button_clicked);
+        animation.setRepeatMode(ValueAnimator.REVERSE);
+
+        v.startAnimation(animation);
+    }
+
+    // send message through client
+    private void sendMessage (View v) {
+        String content = this.editText.getText().toString().trim().replace("\0", ""); // just to make sure, remove any possible null characters
+        if (content.trim().isEmpty())
+            return;
+
         this.editText.setText("");
 
         Message message = Message.toMessage(Message.Type.Message, content, this.mainActivityInstance.currentChatId, this.client.user.getName(), this.client.user.getId());
 
         this.client.sendMessage(message);
         this.chatAdapter.addMessage(message);
-        this.recyclerView.scrollToPosition(this.chatAdapter.getItemCount() - 1);
+
+        this.scrollToLastMessage();
     }
 
-    // display list of chats
-    public void displayChatsList (View v) {
+    // display things
+    private void displayChatsList (View v) {
         if (this.getContext() == null)
             return;
 
@@ -125,20 +158,18 @@ public class ChatFragment extends Fragment implements ClientInterface {
         fragmentFrameLayout.gravity = Gravity.END;
 
         // add fragment to frame layout
-        ChatsFragment fragment = new ChatsFragment();
+        this.chatsFragment = new ChatsFragment();
 
-        // initiate fragment manager and
+        // initiate fragment manager
         FragmentTransaction fragmentManager = getParentFragmentManager().beginTransaction();
 
         fragmentManager.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out, R.anim.fragment_fade_in, R.anim.fragment_fade_out);
-        fragmentManager.add(this.generalFrameLayout.getId(), fragment);
+        fragmentManager.add(this.generalFrameLayout.getId(), this.chatsFragment);
         fragmentManager.commit();
 
         // add frame layout to constraintLayout
         this.constraintLayout.addView(this.generalFrameLayout, fragmentFrameLayout);
     }
-
-    // display the error popup fragment
     public void displayErrorMessage (String title, String description, String firstButtonText, String secondButtonText) {
         if (this.getContext() == null)
             return;
@@ -158,20 +189,45 @@ public class ChatFragment extends Fragment implements ClientInterface {
         args.putString("firstButtonText", firstButtonText);
         args.putString("secondButtonText", secondButtonText);
 
-        PopupErrorFragment fragment = new PopupErrorFragment();
-        fragment.setArguments(args);
+        this.popupErrorFragment = new PopupErrorFragment();
+        this.popupErrorFragment.setArguments(args);
 
         // initiate fragment manager and
         FragmentTransaction fragmentManager = getParentFragmentManager().beginTransaction();
 
         fragmentManager.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out, R.anim.fragment_fade_in, R.anim.fragment_fade_out);
-        fragmentManager.add(this.generalFrameLayout.getId(), fragment);
+        fragmentManager.add(this.generalFrameLayout.getId(), this.popupErrorFragment);
         fragmentManager.commit();
 
         // add frame layout to constraintLayout
         this.constraintLayout.addView(this.generalFrameLayout, fragmentFrameLayout);
     }
-    public void removeGeneralFrameLayout() {
+
+    public void closeErrorMessage () {
+        if (this.popupErrorFragment == null)
+            return;
+
+        FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+        transaction.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out);
+        transaction.remove(this.popupErrorFragment);
+        transaction.commit();
+
+        // remove after the animation finishes (125ms)
+        new Handler(Looper.getMainLooper()).postDelayed((Runnable) this::removeGeneralFrameLayout, 150);
+    }
+    public void closeChatsList () {
+        if (this.chatsFragment == null)
+            return;
+
+        FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+        transaction.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out);
+        transaction.remove(this.chatsFragment);
+        transaction.commit();
+
+        // remove after the animation finishes (125ms)
+        new Handler(Looper.getMainLooper()).postDelayed((Runnable) this::removeGeneralFrameLayout, 150);
+    }
+    private void removeGeneralFrameLayout() {
         this.generalFrameLayout.removeAllViews();
         this.constraintLayout.removeView(this.generalFrameLayout);
     }
@@ -185,20 +241,29 @@ public class ChatFragment extends Fragment implements ClientInterface {
 
     // messages
     @Override
-    public void onMessageReceived(Message message) {
+    public void onMessageReceived (Message message) {
         // if it's inside the main thread
         if (Looper.myLooper() == Looper.getMainLooper()) {
             this.chatAdapter.addMessage(message);
+            this.scrollToLastMessage();
         }
         else {
             // Call a function on the UI thread
             mainActivityInstance.runOnUiThread(() -> {
                 this.chatAdapter.addMessage(message);
+                this.scrollToLastMessage();
             });
         }
     }
 
+    public void scrollToLastMessage () {
+        this.recyclerView.scrollToPosition(this.chatAdapter.getItemCount() - 1);
+    }
+
     public void updateMessageHistory (int chatId) {
+        if (chatId == this.mainActivityInstance.currentChatId && this.chatAdapter.getItemCount() > 0)
+            return;
+
         this.chatAdapter.clear();
         this.chatAdapter.notifyDataSetChanged();
         // no other way, must use notifyDataSetChanged()

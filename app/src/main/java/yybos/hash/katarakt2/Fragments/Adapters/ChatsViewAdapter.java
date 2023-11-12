@@ -1,8 +1,11 @@
 package yybos.hash.katarakt2.Fragments.Adapters;
 
+import android.animation.ValueAnimator;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -26,10 +29,6 @@ public class ChatsViewAdapter extends RecyclerView.Adapter<ChatsViewHolder> {
         if (chatFragment != null)
             this.chatFragmentInstance = chatFragment;
     }
-    public ChatsViewAdapter (List<Chat> history) {
-        if (history != null)
-            this.chats = history;
-    }
 
     public void addChat (Chat chat) {
         this.chats.add(chat);
@@ -51,8 +50,15 @@ public class ChatsViewAdapter extends RecyclerView.Adapter<ChatsViewHolder> {
         holder.dateTextView.setText(String.valueOf(chat.getId()));
 
         holder.constraintLayout.setOnClickListener(v -> {
+            // animation
+            Animation animation = AnimationUtils.loadAnimation(this.chatFragmentInstance.getContext(), R.anim.button_clicked);
+            animation.setRepeatMode(ValueAnimator.REVERSE);
+
+            v.startAnimation(animation);
+            //
+
             this.chatFragmentInstance.updateMessageHistory(chat.getId());
-            this.chatFragmentInstance.removeGeneralFrameLayout();
+            this.chatFragmentInstance.closeChatsList();
         });
         // Handle click events for likeButton, etc.
     }

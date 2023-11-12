@@ -18,7 +18,7 @@ public class ChatViewAdapter extends RecyclerView.Adapter<ChatViewHolder> {
     private List<Message> messages = new ArrayList<>();
 
     public ChatViewAdapter (List<Message> history) {
-        if (history != null) {
+        if (history != null && !history.isEmpty()) {
             this.messages = history;
         }
     }

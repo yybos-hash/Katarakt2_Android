@@ -58,19 +58,22 @@ public class ChatsFragment extends Fragment {
         closeButton.setOnClickListener(this::closeButton);
     }
 
+    // button click animation
+
     @Override
     public void onDestroy () {
         // little trick to get the chatFragment instance. Basically I create a tag when creating the chatFragment, then i can identify it here using the tag
         ChatFragment chatFragmentInstance = ((ChatFragment) getParentFragmentManager().findFragmentByTag("chatFragmentInstance"));
 
         if (chatFragmentInstance != null)
-            chatFragmentInstance.removeGeneralFrameLayout();
+            chatFragmentInstance.closeChatsList();
 
         super.onDestroy();
     }
 
     private void closeButton (View view) {
         FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+        transaction.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out);
         transaction.remove(this);
         transaction.commit();
     }
