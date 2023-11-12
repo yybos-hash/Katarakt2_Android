@@ -60,8 +60,8 @@ public class MainActivity extends AppCompatActivity {
         buttonSettings.setOnClickListener(this::tabPressed);
         buttonLogin.setOnClickListener(this::tabPressed);
 
-        this.loginEmail = "plusmuriel@gmail.com";
-        this.loginPassword = "123";
+//        this.loginEmail = "plusmuriel@gmail.com";
+//        this.loginPassword = "123";
 
         this.history = new ArrayList<>();
         this.chats = new ArrayList<>();
