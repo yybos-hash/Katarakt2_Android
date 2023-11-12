@@ -34,8 +34,10 @@ public class MainActivity extends AppCompatActivity {
     private List<Message> history;
     private List<Chat> chats;
 
-    private String loginUsername;
+    private String loginEmail;
     private String loginPassword;
+
+    public int currentChatId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,13 +60,13 @@ public class MainActivity extends AppCompatActivity {
         buttonSettings.setOnClickListener(this::tabPressed);
         buttonLogin.setOnClickListener(this::tabPressed);
 
-        this.loginUsername = "Muriel";
+        this.loginEmail = "plusmuriel@gmail.com";
         this.loginPassword = "123";
 
         this.history = new ArrayList<>();
         this.chats = new ArrayList<>();
 
-        this.client = new Client(this.chats, this.history, this.loginUsername, this.loginPassword);
+        this.client = new Client(this.chats, this.history, this.loginEmail, this.loginPassword);
 
         this.client.tryConnection();
     }
@@ -111,21 +113,14 @@ public class MainActivity extends AppCompatActivity {
 
     // login
 
-    public void setLoginUsername (String username) {
-        this.loginUsername = username;
+    public void setLoginEmail(String username) {
+        this.loginEmail = username;
     }
     public void setLoginPassword (String password) {
         this.loginPassword = password;
     }
 
-    public String getLoginUsername () {
-        return this.loginUsername;
-    }
-    public String getLoginPassword () {
-        return this.loginPassword;
-    }
-
-    // message history
+    // histories
 
     public List<Message> getHistory () {
         return this.history;

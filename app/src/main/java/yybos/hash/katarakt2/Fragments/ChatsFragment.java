@@ -47,7 +47,7 @@ public class ChatsFragment extends Fragment {
 
         List<Chat> chats = this.mainActivityInstance.getChats();
 
-        this.chatsAdapter = new ChatsViewAdapter(chats);
+        this.chatsAdapter = new ChatsViewAdapter(chats, ((ChatFragment) getParentFragmentManager().findFragmentByTag("chatFragmentInstance")));
 
         RecyclerView recyclerView = root.findViewById(R.id.chatsRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -64,7 +64,7 @@ public class ChatsFragment extends Fragment {
         ChatFragment chatFragmentInstance = ((ChatFragment) getParentFragmentManager().findFragmentByTag("chatFragmentInstance"));
 
         if (chatFragmentInstance != null)
-            chatFragmentInstance.removePopupFrameLayout();
+            chatFragmentInstance.removeGeneralFrameLayout();
 
         super.onDestroy();
     }

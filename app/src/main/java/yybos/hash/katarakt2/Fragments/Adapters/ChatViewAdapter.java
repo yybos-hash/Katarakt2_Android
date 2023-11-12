@@ -27,6 +27,9 @@ public class ChatViewAdapter extends RecyclerView.Adapter<ChatViewHolder> {
         this.messages.add(message);
         notifyItemChanged(this.messages.size() - 1);
     }
+    public void clear () {
+        this.messages.clear();
+    }
 
     @NonNull
     @Override

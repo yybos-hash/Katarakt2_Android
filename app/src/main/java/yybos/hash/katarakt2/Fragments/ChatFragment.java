@@ -1,6 +1,7 @@
 package yybos.hash.katarakt2.Fragments;
 
 import android.os.Bundle;
+import android.os.Looper;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -33,6 +34,7 @@ public class ChatFragment extends Fragment implements ClientInterface {
     private FrameLayout generalFrameLayout; // used for displaying things on the screen
 
     private EditText editText;
+    private ImageView sendButton;
     private ImageView chatsButton;
     private RecyclerView recyclerView;
 
@@ -82,10 +84,12 @@ public class ChatFragment extends Fragment implements ClientInterface {
 
         this.editText = root.findViewById(R.id.chatEditText);
         this.chatsButton = root.findViewById(R.id.chatChatsButton);
+        this.sendButton = root.findViewById(R.id.chatSendButton);
 
-        this.chatAdapter = new ChatViewAdapter(this.history);
+        this.chatAdapter = new ChatViewAdapter(null);
 
         this.chatsButton.setOnClickListener(this::displayChatsList);
+        this.sendButton.setOnClickListener(this::sendMessage);
 
         this.recyclerView = root.findViewById(R.id.chatRecycler);
         this.recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -95,6 +99,17 @@ public class ChatFragment extends Fragment implements ClientInterface {
 
         if (!this.client.isConnected())
             displayErrorMessage("Oh Noes!", "It looks like you are not connected. CONNECT, BITCH", "Ok :(", "Shut the fuck up");
+    }
+
+    public void sendMessage (View v) {
+        String content = this.editText.getText().toString().trim();
+        this.editText.setText("");
+
+        Message message = Message.toMessage(Message.Type.Message, content, this.mainActivityInstance.currentChatId, this.client.user.getName(), this.client.user.getId());
+
+        this.client.sendMessage(message);
+        this.chatAdapter.addMessage(message);
+        this.recyclerView.scrollToPosition(this.chatAdapter.getItemCount() - 1);
     }
 
     // display list of chats
@@ -156,7 +171,8 @@ public class ChatFragment extends Fragment implements ClientInterface {
         // add frame layout to constraintLayout
         this.constraintLayout.addView(this.generalFrameLayout, fragmentFrameLayout);
     }
-    public void removePopupFrameLayout () {
+    public void removeGeneralFrameLayout() {
+        this.generalFrameLayout.removeAllViews();
         this.constraintLayout.removeView(this.generalFrameLayout);
     }
 
@@ -164,22 +180,30 @@ public class ChatFragment extends Fragment implements ClientInterface {
     @Override
     public void onDestroy () {
         this.mainActivityInstance.removeListener(this);
-
         super.onDestroy();
     }
 
     // messages
     @Override
     public void onMessageReceived(Message message) {
-        this.chatAdapter.addMessage(message);
+        // if it's inside the main thread
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            this.chatAdapter.addMessage(message);
+        }
+        else {
+            // Call a function on the UI thread
+            mainActivityInstance.runOnUiThread(() -> {
+                this.chatAdapter.addMessage(message);
+            });
+        }
     }
 
-    public void updateMessageHistory () {
-        this.recyclerView.removeAllViews();
+    public void updateMessageHistory (int chatId) {
+        this.chatAdapter.clear();
+        this.chatAdapter.notifyDataSetChanged();
+        // no other way, must use notifyDataSetChanged()
 
-        this.history = this.mainActivityInstance.getHistory();
-
-        this.chatAdapter = new ChatViewAdapter(this.history);
-        this.recyclerView.setAdapter(this.chatAdapter);
+        this.client.getChatHistory(chatId);
+        this.mainActivityInstance.currentChatId = chatId;
     }
 }

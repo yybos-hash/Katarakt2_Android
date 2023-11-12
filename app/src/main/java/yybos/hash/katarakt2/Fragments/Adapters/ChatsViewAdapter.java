@@ -10,17 +10,25 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.List;
 
+import yybos.hash.katarakt2.Fragments.ChatFragment;
 import yybos.hash.katarakt2.Fragments.ViewHolders.ChatsViewHolder;
 import yybos.hash.katarakt2.R;
 import yybos.hash.katarakt2.Socket.Objects.Chat;
 
 public class ChatsViewAdapter extends RecyclerView.Adapter<ChatsViewHolder> {
     private List<Chat> chats = new ArrayList<>();
+    private ChatFragment chatFragmentInstance;
 
-    public ChatsViewAdapter (List<Chat> history) {
-        if (history != null) {
+    public ChatsViewAdapter (List<Chat> history, ChatFragment chatFragment) {
+        if (history != null)
             this.chats = history;
-        }
+
+        if (chatFragment != null)
+            this.chatFragmentInstance = chatFragment;
+    }
+    public ChatsViewAdapter (List<Chat> history) {
+        if (history != null)
+            this.chats = history;
     }
 
     public void addChat (Chat chat) {
@@ -43,7 +51,8 @@ public class ChatsViewAdapter extends RecyclerView.Adapter<ChatsViewHolder> {
         holder.dateTextView.setText(String.valueOf(chat.getId()));
 
         holder.constraintLayout.setOnClickListener(v -> {
-            
+            this.chatFragmentInstance.updateMessageHistory(chat.getId());
+            this.chatFragmentInstance.removeGeneralFrameLayout();
         });
         // Handle click events for likeButton, etc.
     }

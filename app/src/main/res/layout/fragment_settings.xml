@@ -39,7 +39,7 @@
             android:paddingStart="12dp"
             android:singleLine="true"
             android:textColor="@color/foregroundColor"
-            android:textColorHint="#9CC2C2BA"
+            android:textColorHint="@color/configEdittextHintColor"
             android:textSize="14dp" />
 
         <EditText
@@ -54,7 +54,7 @@
             android:paddingStart="12dp"
             android:singleLine="true"
             android:textColor="@color/foregroundColor"
-            android:textColorHint="#9CC2C2BA"
+            android:textColorHint="@color/configEdittextHintColor"
             android:textSize="14dp" />
 
     </LinearLayout>

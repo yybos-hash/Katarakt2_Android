@@ -25,11 +25,11 @@
     <color name="loginShapeColor">#242C3E</color>
 
     <color name="chatEdittextColor">@color/edittextColor</color>
-    <color name="chatEdittextHintColor">#7A7A7A</color>
+    <color name="chatEdittextHintColor">#8A7E7E7E</color>
 
     <color name="configTextViewColor">#C2C2BA</color>
     <color name="configEdittextColor">@color/edittextColor</color>
-    <color name="configEdittextHintColor">#7A7A7A</color>
+    <color name="configEdittextHintColor">#8A7E7E7E</color>
 
     <color name="popupErrorShapeColor">#4D242C3E</color>
     <color name="popupErrorTextViewColor">@color/textViewColor</color>

@@ -1,5 +1,10 @@
 package yybos.hash.katarakt2.Socket.Objects;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import java.sql.Date;
+
 public class User {
     private int id;
     private String name;
@@ -23,5 +28,15 @@ public class User {
     }
     public void setPass (String pass) {
         this.pass = pass;
+    }
+
+    public static User fromString (String json) {
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        gsonBuilder.registerTypeAdapter(Date.class, new ObjectDateDeserializer());
+        //  Basically when gson formats a Date in the sql.Date format it changes the format, so this keeps the it as it should
+
+        Gson userParser = gsonBuilder.create();
+
+        return userParser.fromJson(json, User.class);
     }
 }

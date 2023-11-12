@@ -97,6 +97,7 @@ public class Message {
 
         Gson messageParser = gsonBuilder.create();
 
+//        System.out.println(json);
         return messageParser.fromJson(json, Message.class);
     }
 

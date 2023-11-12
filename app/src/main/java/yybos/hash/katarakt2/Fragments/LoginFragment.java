@@ -49,7 +49,7 @@ public class LoginFragment extends Fragment {
         this.mainActivityInstance.moveSelectionTab(this);
 
         loginButton.setOnClickListener(v -> {
-            this.mainActivityInstance.setLoginUsername(username.getText().toString());
+            this.mainActivityInstance.setLoginEmail(username.getText().toString());
             this.mainActivityInstance.setLoginPassword(password.getText().toString());
         });
     }

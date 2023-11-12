@@ -31,6 +31,7 @@
         android:background="@drawable/chat_edittext_shape"
         android:ems="10"
         android:hint="@string/chatEdittext"
+        android:textColorHint="@color/chatEdittextHintColor"
         android:importantForAutofill="no"
         android:inputType="textPersonName"
         android:paddingHorizontal="12dp"
@@ -41,6 +42,16 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         tools:ignore="SpeakableTextPresentCheck,TouchTargetSizeCheck" />
+
+    <ImageView
+        android:id="@+id/chatSendButton"
+        android:layout_width="35dp"
+        android:layout_height="35dp"
+        android:layout_marginEnd="15dp"
+        android:layout_marginBottom="6dp"
+        android:src="@drawable/send_icon"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <ImageView
         android:id="@+id/chatChatsButton"

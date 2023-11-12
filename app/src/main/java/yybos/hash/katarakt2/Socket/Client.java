@@ -1,5 +1,6 @@
 package yybos.hash.katarakt2.Socket;
 
+import android.os.Looper;
 import android.util.Log;
 
 import java.net.InetSocketAddress;
@@ -11,6 +12,7 @@ import java.util.List;
 import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
 import yybos.hash.katarakt2.Socket.Objects.Chat;
 import yybos.hash.katarakt2.Socket.Objects.Message;
+import yybos.hash.katarakt2.Socket.Objects.User;
 
 public class Client {
     private final List<Message> history;
@@ -21,15 +23,17 @@ public class Client {
 
     private Utils messageUtils;
 
-    private String loginUsername;
-    private String loginPassword;
+    private final String loginEmail;
+    private final String loginPassword;
 
-    public Client (List<Chat> chats, List<Message> history, String username, String password) {
+    public User user;
+
+    public Client (List<Chat> chats, List<Message> history, String email, String password) {
         this.history = history;
         this.chats = chats;
 
         // define login info
-        this.loginUsername = username == null ? " " : username;
+        this.loginEmail = email == null ? " " : email;
         this.loginPassword = password == null ? " " : password;
     }
 
@@ -82,7 +86,10 @@ public class Client {
         this.messageUtils = messageUtils;
 
         try {
-            messageUtils.sendRawMessage(Constants.version + ';' + this.loginUsername + ';' + this.loginPassword);
+            messageUtils.sendRawMessage(Constants.version + ';' + this.loginEmail + ';' + this.loginPassword);
+            String credentials = new String(Constants.buffer, 0, messageUtils.in.read(new byte[110]), Constants.encoding); // consider using a 110 byte buffer for this, it's the max length of a serialized user object
+
+            this.user = User.fromString(credentials.replace("\0", ""));
 
             this.isConnected = true;
 
@@ -91,22 +98,24 @@ public class Client {
 
             String temp;
             String bucket = "";
-            StringBuilder rawMessage = new StringBuilder();
-
-            boolean receiving;
+            StringBuilder rawMessage;
 
             try {
                 while (true) {
+                    rawMessage = new StringBuilder();
+
                     // receive message
                     do {
-                        receiving = true;
-
                         // rawMessage will be the parsed message and the bucket will be the next message. Break the loop and parse :Sex_penis:
                         if (!bucket.isEmpty()) {
-                            rawMessage = new StringBuilder(bucket.substring(0, bucket.indexOf('\0')));
-                            bucket = bucket.substring(bucket.indexOf('\0') + 1);
+                            if (bucket.contains("\0")) {
+                                rawMessage = new StringBuilder(bucket.substring(0, bucket.indexOf('\0') + 1));
+                                bucket = bucket.substring(bucket.indexOf('\0') + 1);
 
-                            break;
+                                break;
+                            }
+                            else
+                                rawMessage.append(bucket);
                         }
 
                         packet = messageUtils.in.read(Constants.buffer);
@@ -115,21 +124,20 @@ public class Client {
 
                         temp = new String(Constants.buffer, 0, packet, Constants.encoding);
 
+
                         // checks for the \0 in the temp
-                        for (int i = 0; i < temp.length(); i++) {
-                            if (temp.charAt(i) == '\0') {
-                                receiving = false;
+                        if (temp.contains("\0")) {
+                            int i = temp.indexOf('\0');
 
-                                // bucket will store the beginning of the other message ( ...}/0{... )
-                                bucket = temp.substring(i + 1);
-                                rawMessage = new StringBuilder(temp.substring(0, i));
+                            rawMessage.append(temp.substring(0, i + 1));
+                            bucket = temp.substring(i + 1);
 
-                                break;
-                            }
+                            break;
                         }
-                    } while (receiving);
 
-                    System.out.println("messageClient: " + rawMessage);
+                        // tem que ter
+                        rawMessage.append(temp);
+                    } while (true);
 
                     // parse raw message
                     message = Message.fromString(rawMessage.toString().replace("\0", ""));
@@ -146,7 +154,6 @@ public class Client {
                 e.printStackTrace();
                 System.out.println("Exception in client: " + client.getInetAddress().toString());
                 System.out.println(e.getMessage());
-                System.out.println("Returning");
 
                 this.isConnected = false;
             }
@@ -156,7 +163,6 @@ public class Client {
 
             e.printStackTrace();
             System.out.println(e.getMessage());
-            System.out.println("Returning");
 
             this.isConnected = false;
         }
@@ -168,7 +174,7 @@ public class Client {
         Utils chatsUtils = new Utils(client);
 
         try {
-            chatsUtils.sendRawMessage(Constants.version + ';' + this.loginUsername + ';' + this.loginPassword);
+            chatsUtils.sendRawMessage(Constants.version + ';' + this.loginEmail + ';' + this.loginPassword);
 
             int packet;
             Chat chat;
@@ -232,17 +238,27 @@ public class Client {
         catch (Exception e) {
             chatsUtils.close();
 
-            e.printStackTrace();
             System.out.println(e.getMessage());
             System.out.println("Returning");
         }
     }
-
     public void sendMessage (Message message) {
         if (this.messageUtils == null || !this.isConnected)
             return;
 
-        this.messageUtils.sendMessage(message);
+        // checks wheter its on the main thread or not
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            // You are on the main thread/UI thread
+            new Thread(() -> this.messageUtils.sendObject(message)).start();
+        } else {
+            // You are not on the main thread
+            this.messageUtils.sendObject(message);
+        }
+    }
+
+    public void getChatHistory (int chatId) {
+        this.history.clear();
+        this.sendMessage(Message.toMessage(Message.Type.Command, "getChatHistory", chatId, "", 0));
     }
 
     // listeners

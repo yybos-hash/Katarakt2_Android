@@ -73,7 +73,7 @@ public class PopupErrorFragment extends Fragment {
         ChatFragment chatFragmentInstance = ((ChatFragment) getParentFragmentManager().findFragmentByTag("chatFragmentInstance"));
 
         if (chatFragmentInstance != null)
-            chatFragmentInstance.removePopupFrameLayout();
+            chatFragmentInstance.removeGeneralFrameLayout();
 
         super.onDestroy();
     }
