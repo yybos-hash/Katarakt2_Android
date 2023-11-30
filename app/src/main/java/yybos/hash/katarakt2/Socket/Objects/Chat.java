@@ -5,36 +5,17 @@ import com.google.gson.GsonBuilder;
 
 import java.sql.Date;
 
-public class Chat {
-    private int id;
-    private int user;
-    private String nm;
-
-    public int getId () {
-        return this.id;
-    }
-    public int getUser () {
-        return this.user;
-    }
+public class Chat extends PacketObject {
     public String getName () {
-        return this.nm;
-    }
-
-    public void setId (int id) {
-        this.id = id;
-    }
-    public void setUser (int id) {
-        this.user = id;
-    }
-    public void setName (String name) {
-        this.nm = name;
+        return this.e;
     }
 
     public static Chat toChat (int id, int user, String name) {
         Chat chat = new Chat();
-        chat.setId(id);
-        chat.setUser(user);
-        chat.setName(name);
+        chat.type = Type.Chat;
+        chat.id = id;
+        chat.a = user;
+        chat.e = name;
 
         return chat;
     }
@@ -43,9 +24,9 @@ public class Chat {
         gsonBuilder.registerTypeAdapter(Date.class, new ObjectDateDeserializer());
         //  Basically when gson formats a Date in the sql.Date format it changes the format, so this keeps the it as it should
 
-        Gson chatParser = gsonBuilder.create();
+        Gson parser = gsonBuilder.serializeNulls().create();
 
-        return chatParser.fromJson(json, Chat.class);
+        return parser.fromJson(json, Chat.class);
     }
 }
 

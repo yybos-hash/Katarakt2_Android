@@ -19,12 +19,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
-            android:text="Sex Penis"
+            android:text="Register"
             android:textColor="@color/loginTextViewColor"
             android:textSize="20sp" />
 
         <EditText
-            android:id="@+id/loginEmailEdittext"
+            android:id="@+id/registerEmailEdittext"
             android:layout_width="200dp"
             android:layout_height="40dp"
             android:layout_marginBottom="5dp"
@@ -35,7 +35,7 @@
             android:textSize="14sp" />
 
         <EditText
-            android:id="@+id/loginPasswordEdittext"
+            android:id="@+id/registerPasswordEdittext"
             android:layout_width="200dp"
             android:layout_height="40dp"
             android:layout_marginBottom="5dp"
@@ -46,7 +46,7 @@
             android:textSize="14sp" />
 
         <EditText
-            android:id="@+id/loginUsernameEdittext"
+            android:id="@+id/registerUsernameEdittext"
             android:layout_width="200dp"
             android:layout_height="40dp"
             android:layout_marginBottom="15dp"
@@ -57,7 +57,7 @@
             android:textSize="14sp" />
 
         <Button
-            android:id="@+id/loginButton"
+            android:id="@+id/registerButton"
             android:layout_width="200dp"
             android:layout_height="40dp"
             android:background="@drawable/login_button_shape"

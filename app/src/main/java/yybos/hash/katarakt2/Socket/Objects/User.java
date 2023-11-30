@@ -7,39 +7,46 @@ import com.google.gson.GsonBuilder;
 
 import java.sql.Date;
 
-public class User {
-    private int id;
-    private String name;
-    private String pass;
-
-    public int getId () {
-        return id;
+public class User extends PacketObject {
+    public String getUsername () {
+        return this.e;
     }
-    public String getName () {
-        return name;
+    public String getEmail () {
+        return this.f;
     }
-    public String getPass () {
-        return this.pass;
+    public String getPassword () {
+        return this.g;
     }
 
-    public void setId (int id) {
-        this.id = id;
+    public void setUsername(String username) {
+        this.e = username;
     }
-    public void setName (String name) {
-        this.name = name;
+    public void setEmail (String email) {
+        this.f = email;
     }
-    public void setPass (String pass) {
-        this.pass = pass;
+    public void setPassword (String password) {
+        this.g = password;
     }
 
+    public static User toUser (int id, String username, String email, String password) {
+        User from = new User();
+        from.type = Type.User;
+        from.id = id;
+
+        from.e = username;
+        from.f = email;
+        from.g = password;
+
+        return from;
+    }
     @NonNull
     public static User fromString (String json) {
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(Date.class, new ObjectDateDeserializer());
         //  Basically when gson formats a Date in the sql.Date format it changes the format, so this keeps the it as it should
 
-        Gson userParser = gsonBuilder.create();
+        Gson parser = gsonBuilder.serializeNulls().create();
 
-        return userParser.fromJson(json, User.class);
+        return parser.fromJson(json, User.class);
     }
 }

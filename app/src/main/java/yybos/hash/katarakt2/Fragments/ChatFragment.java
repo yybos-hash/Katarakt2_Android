@@ -30,6 +30,7 @@ import yybos.hash.katarakt2.MainActivity;
 import yybos.hash.katarakt2.R;
 import yybos.hash.katarakt2.Socket.Client;
 import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
+import yybos.hash.katarakt2.Socket.Objects.Chat;
 import yybos.hash.katarakt2.Socket.Objects.Message;
 
 public class ChatFragment extends Fragment implements ClientInterface {
@@ -110,12 +111,12 @@ public class ChatFragment extends Fragment implements ClientInterface {
         if (this.chatAdapter.getItemCount() > 0)
             this.scrollToLastMessage();
 
-        if (!this.client.isConnected()) {
-            displayErrorMessage("Oh Noes!", "It looks like you are not connected. CONNECT, BITCH", "Ok :(", "Shut the fuck up");
+        if (this.mainActivityInstance.getLoginEmail() == null || this.mainActivityInstance.getLoginPassword() == null) {
+            displayErrorMessage("Oh Noes!", "It looks like you are not logged in. LOG IN, BITCH", "Ok :(", "Shut the fuck up");
+        }
 
-            // clear list of chats and messages
-            this.mainActivityInstance.getChats().clear();
-            this.mainActivityInstance.getHistory().clear();
+        if (!this.client.isConnected()) {
+            // displayErrorMessage("Oh Noes!", "It looks like you are not connected. CONNECT, BITCH", "Ok :(", "Shut the fuck up");
 
             this.client.tryConnection();
         }
@@ -137,7 +138,7 @@ public class ChatFragment extends Fragment implements ClientInterface {
 
         this.editText.setText("");
 
-        Message message = Message.toMessage(Message.Type.Message, content, this.mainActivityInstance.currentChatId, this.client.user.getName(), this.client.user.getId());
+        Message message = Message.toMessage(content, this.mainActivityInstance.currentChatId, this.client.user.getUsername(), this.client.user.getId());
 
         this.client.sendMessage(message);
         this.chatAdapter.addMessage(message);
@@ -150,9 +151,12 @@ public class ChatFragment extends Fragment implements ClientInterface {
         if (this.getContext() == null)
             return;
 
+        this.client.getChats();
+
         // create frame layout for popup fragment
         this.generalFrameLayout = new FrameLayout(this.getContext());
         this.generalFrameLayout.setId(View.generateViewId());
+        this.generalFrameLayout.setOnClickListener(view -> this.closeChatsList());
 
         FrameLayout.LayoutParams fragmentFrameLayout = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         fragmentFrameLayout.gravity = Gravity.END;
@@ -177,6 +181,7 @@ public class ChatFragment extends Fragment implements ClientInterface {
         // create frame layout for popup fragment
         this.generalFrameLayout = new FrameLayout(this.getContext());
         this.generalFrameLayout.setId(View.generateViewId());
+        this.generalFrameLayout.setOnClickListener(view -> {this.closeErrorMessage();});
 
         FrameLayout.LayoutParams fragmentFrameLayout = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         fragmentFrameLayout.gravity = Gravity.CENTER;
@@ -212,8 +217,8 @@ public class ChatFragment extends Fragment implements ClientInterface {
         transaction.remove(this.popupErrorFragment);
         transaction.commit();
 
-        // remove after the animation finishes (125ms)
-        new Handler(Looper.getMainLooper()).postDelayed((Runnable) this::removeGeneralFrameLayout, 150);
+        // remove after the animation finishes (125ms) // there is not a method to execute a function when the animation ends, so this is a substitute
+        new Handler(Looper.getMainLooper()).postDelayed(this::removeGeneralFrameLayout, 150);
     }
     public void closeChatsList () {
         if (this.chatsFragment == null)
@@ -239,7 +244,7 @@ public class ChatFragment extends Fragment implements ClientInterface {
         super.onDestroy();
     }
 
-    // messages
+    // events
     @Override
     public void onMessageReceived (Message message) {
         // if it's inside the main thread
@@ -252,6 +257,19 @@ public class ChatFragment extends Fragment implements ClientInterface {
             mainActivityInstance.runOnUiThread(() -> {
                 this.chatAdapter.addMessage(message);
                 this.scrollToLastMessage();
+            });
+        }
+    }
+    @Override
+    public void onChatReceived(Chat chat) {
+        // if it's inside the main thread
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            this.chatsFragment.addChat(chat);
+        }
+        else {
+            // Call a function on the UI thread
+            mainActivityInstance.runOnUiThread(() -> {
+                this.chatsFragment.addChat(chat);
             });
         }
     }
@@ -268,6 +286,7 @@ public class ChatFragment extends Fragment implements ClientInterface {
         this.chatAdapter.notifyDataSetChanged();
         // no other way, must use notifyDataSetChanged()
 
+        this.history.clear();
         this.client.getChatHistory(chatId);
         this.mainActivityInstance.currentChatId = chatId;
     }

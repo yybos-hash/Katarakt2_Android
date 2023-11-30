@@ -16,77 +16,43 @@ import com.google.gson.GsonBuilder;
 
 import java.sql.Date;
 
-public class Message {
-    private int id;
-    private Type type;
-
-    private String message;
-    private int size;
-    private Date dt;
-    private int chat;
-    private String user;
-
-    public int getUserId() {
-        return userId;
-    }
-
-    public void setUserId(int userId) {
-        this.userId = userId;
-    }
-
-    private int userId;
-
+public class Message extends PacketObject {
     public int getId () {
-        return id;
+        return this.id;
     }
-    public Type getType () {
-        return type;
-    }
-    public String getContent() {
-        return message;
-    }
-    public int getSize () {
-        return size;
-    }
-    public Date getDate () {
-        return dt;
+    public String getMessage () {
+        return this.e;
     }
     public int getChat () {
-        return chat;
+        return this.a;
     }
-    public String getUser () {
-        return user;
+    public String getUsername () {
+        return this.f;
     }
-
-    public void setId(int id) {
-        this.id = id;
+    public int getUserId () {
+        return this.b;
     }
-    public void setType(int type) {
-        this.type = Type.getEnumByValue(type);
-    }
-    public void setContent(String message) {
-        this.message = message;
-        this.size = message.length();
-    }
-    public void setDate(Date dt) {
-        this.dt = dt;
-    }
-    public void setChat(int chat) {
-        this.chat = chat;
-    }
-    public void setUser(String user) {
-        this.user = user;
+    public Date getDate () {
+        return this.date;
     }
 
-    public static Message toMessage (Message.Type type, String message, int chat, String user, int userId) {
+    public static Message toMessage (String message, int chat, String username, int userId) {
         Message from = new Message();
-        from.type = type;
-        from.message = message;
-        from.size = message.length();
-        from.chat = chat;
-        from.user = user;
-        from.userId = userId;
-        from.dt = new Date(System.currentTimeMillis());
+        from.type = Type.Message;
+        from.e = message;
+        from.a = chat;
+        from.f = username;
+        from.b = userId;
+        from.date = new Date(System.currentTimeMillis());
+
+        return from;
+    }
+    public static Message toMessage (String message, String username) {
+        Message from = new Message();
+        from.type = Type.Message;
+        from.e = message;
+        from.f = username;
+        from.date = new Date(System.currentTimeMillis());
 
         return from;
     }
@@ -95,35 +61,9 @@ public class Message {
         gsonBuilder.registerTypeAdapter(Date.class, new ObjectDateDeserializer());
         //  Basically when gson formats a Date in the sql.Date format it changes the format, so this keeps the it as it should
 
-        Gson messageParser = gsonBuilder.create();
+        Gson parser = gsonBuilder.serializeNulls().create();
 
-//        System.out.println(json);
-        return messageParser.fromJson(json, Message.class);
-    }
-
-    public enum Type {
-        Message(0),
-        Command(1),
-        Version(2),
-        Chat(3);
-
-        private final int value;
-
-        Type (int value) {
-            this.value = value;
-        }
-
-        public int getValue () {
-            return value;
-        }
-        public static Type getEnumByValue (int value) {
-            for (Type enumValue : Type.values()) {
-                if (enumValue.getValue() == value) {
-                    return enumValue;
-                }
-            }
-            throw new IllegalArgumentException("No type with value " + value);
-        }
+        return parser.fromJson(json, Message.class);
     }
 
     @NonNull
@@ -131,10 +71,9 @@ public class Message {
     public String toString() {
         return "{\nid: " + this.id +
                 ",\ntype: '" + this.type +
-                "',\nmessage: '" + this.message +
-                "',\nsize: " + this.size +
-                ",\ndate: " + this.dt +
-                ",\nchat: " + this.chat +
-                ",\nuser: " + this.user + "\n}\n";
+                "',\nmessage: '" + this.e +
+                ",\ndate: " + this.date +
+                ",\nchat: " + this.a +
+                ",\nuser: " + this.b + "\n}\n";
     }
 }

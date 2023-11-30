@@ -3,39 +3,33 @@ package yybos.hash.katarakt2.Socket;
 import android.os.Looper;
 import android.util.Log;
 
-import java.io.DataInputStream;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
+import yybos.hash.katarakt2.MainActivity;
 import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
 import yybos.hash.katarakt2.Socket.Objects.Chat;
+import yybos.hash.katarakt2.Socket.Objects.Command;
 import yybos.hash.katarakt2.Socket.Objects.Message;
+import yybos.hash.katarakt2.Socket.Objects.PacketObject;
 import yybos.hash.katarakt2.Socket.Objects.User;
 
 public class Client {
-    private final List<Message> history;
-    private final List<Chat> chats;
     private final List<ClientInterface> listeners = new ArrayList<>();
 
     private boolean isConnected = false;
 
     private Utils messageUtils;
-
-    private final String loginEmail;
-    private final String loginPassword;
+    private final MainActivity mainActivity;
 
     public User user;
 
-    public Client (List<Chat> chats, List<Message> history, String email, String password) {
-        this.history = history;
-        this.chats = chats;
-
-        // define login info
-        this.loginEmail = email == null ? " " : email;
-        this.loginPassword = password == null ? " " : password;
+    public Client (MainActivity mainActivity) {
+        this.mainActivity = mainActivity;
     }
 
     public boolean isConnected () {
@@ -43,6 +37,9 @@ public class Client {
     }
 
     public void tryConnection () {
+        if (mainActivity.getLoginEmail().equals(" ") || mainActivity.getLoginPassword().equals(" "))
+            return;
+
         Thread t1 = new Thread(this::connect);
         t1.start();
     }
@@ -51,30 +48,25 @@ public class Client {
         try {
             Socket messageSocket = new Socket();
             Socket mediaSocket = new Socket();
-            Socket chatsSocket = new Socket();
 
             // sets the ip and port of the servers
             SocketAddress messageAddress = new InetSocketAddress(Constants.server, Constants.messagePort);
             SocketAddress mediaAddress = new InetSocketAddress(Constants.server, Constants.mediaPort);
-            SocketAddress chatsAddress = new InetSocketAddress(Constants.server, Constants.chatsPort);
 
             messageSocket.connect(messageAddress, 4500);
 //            mediaSocket.connect(downloadAddress, 4500);
-            chatsSocket.connect(chatsAddress, 4500);
             // connect the clients
 
-            if (!messageSocket.isConnected() || !chatsSocket.isConnected())
+            if (!messageSocket.isConnected())
                 return;
 
             // set the threads
             Thread messageThread = new Thread(() -> handleMessage(messageSocket));
 //            Thread mediaThread = new Thread(() -> handleMedia(mediaSocket));
-            Thread chatsThread = new Thread(() -> handleChats(chatsSocket));
 
             // start the threads
             messageThread.start();
 //            mediaThread.start();
-            chatsThread.start();
         } catch (Exception e) {
             Log.i("Client Connection", "Deu meme");
 
@@ -87,26 +79,14 @@ public class Client {
         this.messageUtils = messageUtils;
 
         try {
-            messageUtils.sendRawMessage(Constants.version + ';' + this.loginEmail + ';' + this.loginPassword);
-
-            // read only the 110 byte sized object (User) from the server
-            byte[] credentialsBytes = new byte[110];
-
-            DataInputStream dis = new DataInputStream(messageUtils.in);
-            dis.readFully(credentialsBytes);
-            // read all the bytes. Apparently this method always existed and couldve facilitate my life a lot
-
-            String credentials = new String(credentialsBytes, Constants.encoding);
-            //
-
-            this.user = User.fromString(credentials.replace("\0", ""));
+            // send alllejdnaejkdklad
+            messageUtils.sendRawMessage(Constants.version + ';' + mainActivity.getLoginEmail() + ';' + mainActivity.getLoginPassword() + ';' +  mainActivity.getLoginUsername());
 
             this.isConnected = true;
 
             int packet;
-            Message message;
+            PacketObject packetObject;
 
-            String temp;
             String bucket = "";
             StringBuilder rawMessage;
 
@@ -114,9 +94,9 @@ public class Client {
                 while (true) {
                     rawMessage = new StringBuilder();
 
-                    // receive message
+                    // receive packetObject
                     do {
-                        // rawMessage will be the parsed message and the bucket will be the next message. Break the loop and parse :Sex_penis:
+                        // rawMessage will be the parsed packetObject and the bucket will be the next packetObject. Break the loop and parse :Sex_penis:
                         if (!bucket.isEmpty()) {
                             if (bucket.contains("\0")) {
                                 rawMessage = new StringBuilder(bucket.substring(0, bucket.indexOf('\0') + 1));
@@ -130,15 +110,14 @@ public class Client {
 
                         packet = messageUtils.in.read(Constants.buffer);
                         if (packet <= 0) // if the packet bytes count is less or equal to 0 then the client has disconnected, which means that the thread should be terminated
-                            return;
+                            throw new IOException("Client connection was abruptly interrupted");
 
-                        temp = new String(Constants.buffer, 0, packet, Constants.encoding);
+                        String temp = new String(Constants.buffer, 0, packet, Constants.encoding);
 
                         // checks for the \0 in the temp
-                        if (temp.contains("\0")) {
-                            int i = temp.indexOf('\0');
-
-                            rawMessage.append(temp.substring(0, i + 1));
+                        int i = temp.indexOf('\0');
+                        if (i != -1) {
+                            rawMessage.append(temp, 0, i + 1);
                             bucket = temp.substring(i + 1);
 
                             break;
@@ -147,22 +126,40 @@ public class Client {
                         // tem que ter
                         rawMessage.append(temp);
                     } while (true);
+                    rawMessage = new StringBuilder(rawMessage.toString().replace("\0", ""));
 
-                    // parse raw message
-                    message = Message.fromString(rawMessage.toString().replace("\0", ""));
+                    // parse rawMessage
+                    packetObject = PacketObject.fromString(rawMessage.toString());
 
-                    // append message to history
-                    this.history.add(message);
-                    this.notifyMessageToListeners(message);
-                    // notify message to listeners (chatFragment)
+                    if (packetObject.getType() == PacketObject.Type.Message) {
+                        Message message = Message.fromString(rawMessage.toString());
+
+                        this.notifyMessageToListeners(message, true);
+                    }
+                    else if (packetObject.getType() == PacketObject.Type.Chat) {
+                        Chat chat = Chat.fromString(rawMessage.toString());
+
+                        // huehuehuehuehue
+                        this.notifyChatToListeners(chat);
+                    }
+                    else if (packetObject.getType() == PacketObject.Type.User) {
+                        // notify message to listeners (chatFragment)
+                        User user = User.fromString(rawMessage.toString());
+
+                        // yeah, the login info
+                        this.user = user;
+                    }
                 }
             }
             catch (Exception e) {
                 messageUtils.close();
 
-                e.printStackTrace();
                 System.out.println("Exception in client: " + client.getInetAddress().toString());
                 System.out.println(e.getMessage());
+
+                // just tell the user that the connection was closed
+                Message conMessage = Message.toMessage("Connection abruptly interrupted by the server", "Socket");
+                this.notifyMessageToListeners(conMessage, false);
 
                 this.isConnected = false;
             }
@@ -170,7 +167,6 @@ public class Client {
         catch (Exception e) {
             messageUtils.close();
 
-            e.printStackTrace();
             System.out.println(e.getMessage());
 
             this.isConnected = false;
@@ -179,108 +175,50 @@ public class Client {
     private void handleMedia (Socket client) {
 
     }
-    private void handleChats (Socket client) {
-        Utils chatsUtils = new Utils(client);
-
-        try {
-            chatsUtils.sendRawMessage(Constants.version + ';' + this.loginEmail + ';' + this.loginPassword);
-
-            int packet;
-            Chat chat;
-
-            String temp;
-            String bucket = "";
-            StringBuilder rawMessage = new StringBuilder();
-
-            boolean receiving;
-
-            try {
-                while (true) {
-                    // receive chat
-                    do {
-                        receiving = true;
-
-                        // rawMessage will be the parsed chat and the bucket will be the next chat. Break the loop and parse :Sex_penis:
-                        if (!bucket.isEmpty()) {
-                            rawMessage = new StringBuilder(bucket.substring(0, bucket.indexOf('\0')));
-                            bucket = bucket.substring(bucket.indexOf('\0') + 1);
-
-                            break;
-                        }
-
-                        packet = chatsUtils.in.read(Constants.buffer);
-                        if (packet <= 0) // if the packet bytes count is less or equal to 0 then the client has disconnected, which means that the thread should be terminated
-                            return;
-
-                        temp = new String(Constants.buffer, 0, packet, Constants.encoding);
-
-                        // checks for the \0 in the temp
-                        for (int i = 0; i < temp.length(); i++) {
-                            if (temp.charAt(i) == '\0') {
-                                receiving = false;
-
-                                // bucket will store the beginning of the other chat ( ...}/0{... )
-                                bucket = temp.substring(i + 1);
-                                rawMessage = new StringBuilder(temp.substring(0, i));
-
-                                break;
-                            }
-                        }
-                    } while (receiving);
-
-                    // parse raw chat
-                    chat = Chat.fromString(rawMessage.toString().replace("\0", ""));
-
-                    // huehuehuehuehue
-                    this.chats.add(chat);
-                }
-            }
-            catch (Exception e) {
-                chatsUtils.close();
-
-                e.printStackTrace();
-                System.out.println("Exception in client: " + client.getInetAddress().toString());
-                System.out.println(e.getMessage());
-                System.out.println("Returning");
-            }
-        }
-        catch (Exception e) {
-            chatsUtils.close();
-
-            System.out.println(e.getMessage());
-            System.out.println("Returning");
-        }
-    }
-    public void sendMessage (Message message) {
-        if (this.messageUtils == null || !this.isConnected || message.getContent().trim().isEmpty())
+    private void sendPacketObject(PacketObject packet) {
+        if (this.messageUtils == null || !this.isConnected)
             return;
 
         // checks wheter its on the main thread or not
         if (Looper.myLooper() == Looper.getMainLooper()) {
             // You are on the main thread/UI thread
-            new Thread(() -> this.messageUtils.sendObject(message)).start();
+            new Thread(() -> this.messageUtils.sendObject(packet)).start();
         } else {
             // You are not on the main thread
-            this.messageUtils.sendObject(message);
+            this.messageUtils.sendObject(packet);
         }
+    }
+    public void sendMessage (Message message) {
+        this.sendPacketObject(message);
     }
 
     public void getChatHistory (int chatId) {
-        this.history.clear();
-        this.sendMessage(Message.toMessage(Message.Type.Command, "getChatHistory", chatId, "", 0));
+        this.sendPacketObject(Command.getChatHistory(chatId));
+    }
+    public void getChats () {
+        this.sendPacketObject(Command.getChats());
     }
 
     // listeners
 
-    public void addMessageListener (ClientInterface clientInterface) {
-        this.listeners.add(clientInterface);
+    public void addEventListener(ClientInterface clientInterface) {
+        if (!this.listeners.contains(clientInterface))
+            this.listeners.add(clientInterface);
     }
-    public void removeMessageListener (ClientInterface clientInterface) {
+    public void removeEventListener(ClientInterface clientInterface) {
         this.listeners.remove(clientInterface);
     }
 
-    private void notifyMessageToListeners (Message message) {
+    private void notifyMessageToListeners (Message message, boolean addToHistory) {
+        if (addToHistory)
+            // append message to history
+            this.mainActivity.getHistory().add(message);
+
         for (ClientInterface listener : this.listeners)
             listener.onMessageReceived(message);
+    }
+    private void notifyChatToListeners (Chat chat) {
+        for (ClientInterface listener : this.listeners)
+            listener.onChatReceived(chat);
     }
 }

@@ -19,7 +19,6 @@ import yybos.hash.katarakt2.Fragments.LoginFragment;
 import yybos.hash.katarakt2.Fragments.SettingsFragment;
 import yybos.hash.katarakt2.Socket.Client;
 import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
-import yybos.hash.katarakt2.Socket.Objects.Chat;
 import yybos.hash.katarakt2.Socket.Objects.Message;
 
 public class MainActivity extends AppCompatActivity {
@@ -32,10 +31,12 @@ public class MainActivity extends AppCompatActivity {
 
     private Client client;
     private List<Message> history;
-    private List<Chat> chats;
 
     private String loginEmail;
     private String loginPassword;
+    private String loginUsername;
+
+    private ChatFragment chatFragmentInstance;
 
     public int currentChatId;
 
@@ -60,18 +61,21 @@ public class MainActivity extends AppCompatActivity {
         buttonSettings.setOnClickListener(this::tabPressed);
         buttonLogin.setOnClickListener(this::tabPressed);
 
-//        this.loginEmail = "plusmuriel@gmail.com";
-//        this.loginPassword = "123";
+        this.loginEmail = " ";
+        this.loginPassword = " ";
+        this.loginUsername = " ";
+        // just to initialize it
 
         this.history = new ArrayList<>();
-        this.chats = new ArrayList<>();
 
-        this.client = new Client(this.chats, this.history, this.loginEmail, this.loginPassword);
-
+        this.client = new Client(this);
         this.client.tryConnection();
     }
 
     private void tabPressed (View view) {
+        if (view == this.selectedTab)
+            return;
+
         FragmentTransaction fragmentManager = getSupportFragmentManager().beginTransaction();
         fragmentManager.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out, R.anim.fragment_fade_in, R.anim.fragment_fade_out);
 
@@ -89,15 +93,16 @@ public class MainActivity extends AppCompatActivity {
     public void moveSelectionTab (Fragment fragment) {
         View view;
 
-        if (fragment instanceof ChatFragment)
+        if (fragment instanceof ChatFragment) {
             view = this.buttonChat;
-
-        else if (fragment instanceof SettingsFragment)
+            this.chatFragmentInstance = (ChatFragment) fragment;
+        }
+        else if (fragment instanceof SettingsFragment) {
             view = this.buttonSettings;
-
-        else if (fragment instanceof LoginFragment)
+        }
+        else if (fragment instanceof LoginFragment) {
             view = this.buttonLogin;
-
+        }
         else
             return;
 
@@ -112,19 +117,29 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // login
-    public void setLoginEmail(String username) {
-        this.loginEmail = username;
+    public void setLoginEmail(String email) {
+        this.loginEmail = email;
     }
     public void setLoginPassword (String password) {
         this.loginPassword = password;
+    }
+    public void setLoginUsername(String loginUsername) {
+        this.loginUsername = loginUsername;
+    }
+
+    public String getLoginEmail () {
+        return this.loginEmail;
+    }
+    public String getLoginPassword () {
+        return this.loginPassword;
+    }
+    public String getLoginUsername() {
+        return loginUsername;
     }
 
     // histories
     public List<Message> getHistory () {
         return this.history;
-    }
-    public List<Chat> getChats () {
-        return this.chats;
     }
 
     // client
@@ -133,9 +148,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void addListener (ClientInterface clientInterface) {
-        this.client.addMessageListener(clientInterface);
+        this.client.addEventListener(clientInterface);
     }
     public void removeListener (ClientInterface clientInterface) {
-        this.client.removeMessageListener(clientInterface);
+        this.client.removeEventListener(clientInterface);
+    }
+
+    // fragments
+
+    public ChatFragment getChatFragmentInstance () {
+        return this.chatFragmentInstance;
     }
 }

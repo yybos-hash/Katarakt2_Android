@@ -1,10 +1,12 @@
 package yybos.hash.katarakt2.Fragments;
 
 import android.os.Bundle;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -14,8 +16,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
-
 import yybos.hash.katarakt2.Fragments.Adapters.ChatsViewAdapter;
 import yybos.hash.katarakt2.MainActivity;
 import yybos.hash.katarakt2.R;
@@ -23,8 +23,10 @@ import yybos.hash.katarakt2.Socket.Objects.Chat;
 
 
 public class ChatsFragment extends Fragment {
-    MainActivity mainActivityInstance;
-    ChatsViewAdapter chatsAdapter;
+    private MainActivity mainActivityInstance;
+    private ChatsViewAdapter chatsAdapter;
+
+    private ProgressBar progressBar;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -45,9 +47,7 @@ public class ChatsFragment extends Fragment {
         if (root == null)
             return;
 
-        List<Chat> chats = this.mainActivityInstance.getChats();
-
-        this.chatsAdapter = new ChatsViewAdapter(chats, ((ChatFragment) getParentFragmentManager().findFragmentByTag("chatFragmentInstance")));
+        this.chatsAdapter = new ChatsViewAdapter(((MainActivity) getActivity()).getChatFragmentInstance());
 
         RecyclerView recyclerView = root.findViewById(R.id.chatsRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -56,6 +56,8 @@ public class ChatsFragment extends Fragment {
 
         ImageView closeButton = root.findViewById(R.id.chatsClose);
         closeButton.setOnClickListener(this::closeButton);
+
+        this.progressBar = root.findViewById(R.id.chatsProgressBar);
     }
 
     // button click animation
@@ -76,5 +78,21 @@ public class ChatsFragment extends Fragment {
         transaction.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out);
         transaction.remove(this);
         transaction.commit();
+    }
+
+    public void addChat (Chat chat) {
+        if (this.progressBar.getVisibility() == View.VISIBLE)
+            this.progressBar.setVisibility(View.INVISIBLE);
+
+        // if it's inside the main thread
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            this.chatsAdapter.addChat(chat);
+        }
+        else {
+            // Call a function on the UI thread
+            mainActivityInstance.runOnUiThread(() -> {
+                this.chatsAdapter.addChat(chat);
+            });
+        }
     }
 }

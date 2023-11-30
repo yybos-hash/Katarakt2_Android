@@ -40,10 +40,14 @@ public class ChatViewAdapter extends RecyclerView.Adapter<ChatViewHolder> {
 
     @Override
     public void onBindViewHolder(@NonNull ChatViewHolder holder, int position) {
+        // if position is out of bounds
+//        if (position < 0 || position >= this.getItemCount())
+//            return;
+
         Message message = this.messages.get(position);
 
-        holder.usernameTextView.setText(message.getUser());
-        holder.contentTextView.setText(message.getContent());
+        holder.usernameTextView.setText(message.getUsername());
+        holder.contentTextView.setText(message.getMessage());
         holder.dateTextView.setText(message.getDate().toString());
 
         // Handle click events for likeButton, etc.

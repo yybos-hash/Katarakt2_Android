@@ -26,6 +26,12 @@ public class LoginFragment extends Fragment {
     private boolean inLogin = true;
 
     private FrameLayout frameLayout;
+    private EditText username;
+    private EditText email;
+    private EditText password;
+    private Button loginButton;
+
+    private View root;
 
     public LoginFragment() {
         // Required empty public constructor
@@ -44,20 +50,20 @@ public class LoginFragment extends Fragment {
 
     @Override
     public void onViewCreated (@NonNull View view, @Nullable Bundle savedInstanceState) {
-        View root = getView();
-        if (root == null)
+        this.root = getView();
+        if (this.root == null)
             return;
 
-        this.frameLayout = root.findViewById(R.id.loginFrameLayout);
-        EditText username = root.findViewById(R.id.loginEmailEdittext);
-        EditText password = root.findViewById(R.id.loginPasswordEdittext);
-        TextView switchButton = root.findViewById(R.id.loginSwitchButton);
+        this.frameLayout = this.root.findViewById(R.id.loginFrameLayout);
+        TextView switchButton = this.root.findViewById(R.id.loginSwitchButton);
 
         // inflate the login layout box and put it into the frame layout
         frameLayout.addView(LayoutInflater.from(this.getContext()).inflate(R.layout.layout_login_box, frameLayout, false));
 
         // its here because of the login layout
-        Button loginButton = root.findViewById(R.id.loginButton);
+        this.email = this.root.findViewById(R.id.loginEmailEdittext);
+        this.password = this.root.findViewById(R.id.loginPasswordEdittext);
+        this.loginButton = this.root.findViewById(R.id.loginButton);
 
         this.mainActivityInstance = ((MainActivity) requireActivity());
 
@@ -66,8 +72,17 @@ public class LoginFragment extends Fragment {
 
         loginButton.setOnClickListener(v -> {
             this.buttonClickAnimation(v);
-            this.mainActivityInstance.setLoginEmail(username.getText().toString());
-            this.mainActivityInstance.setLoginPassword(password.getText().toString());
+
+            this.mainActivityInstance.setLoginEmail(this.email.getText().toString());
+            this.mainActivityInstance.setLoginPassword(this.password.getText().toString());
+
+            this.email.setText("");
+            this.password.setText("");
+
+            if (!this.inLogin) {
+                this.mainActivityInstance.setLoginUsername(this.username.getText().toString());
+                this.username.setText("");
+            }
         });
         switchButton.setOnClickListener(this::switchBox);
     }
@@ -87,6 +102,10 @@ public class LoginFragment extends Fragment {
             frameLayout.removeAllViews();
             frameLayout.addView(LayoutInflater.from(this.getContext()).inflate(R.layout.layout_register_box, frameLayout, false));
 
+            this.email = this.root.findViewById(R.id.loginEmailEdittext);
+            this.password = this.root.findViewById(R.id.loginPasswordEdittext);
+            this.loginButton = this.root.findViewById(R.id.loginButton);
+
             ((TextView) v).setText("Already have an account? You shouldn't be here");
         }
         else {
@@ -94,6 +113,10 @@ public class LoginFragment extends Fragment {
 
             frameLayout.removeAllViews();
             frameLayout.addView(LayoutInflater.from(this.getContext()).inflate(R.layout.layout_login_box, frameLayout, false));
+
+            this.email = this.root.findViewById(R.id.registerEmailEdittext);
+            this.password = this.root.findViewById(R.id.registerPasswordEdittext);
+            this.loginButton = this.root.findViewById(R.id.registerButton);
 
             ((TextView) v).setText("Don't have an account yet? What a crime");
         }

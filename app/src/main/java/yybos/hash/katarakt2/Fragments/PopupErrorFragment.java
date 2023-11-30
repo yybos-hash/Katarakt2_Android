@@ -13,6 +13,7 @@ import androidx.fragment.app.FragmentTransaction;
 
 import org.jetbrains.annotations.Nullable;
 
+import yybos.hash.katarakt2.MainActivity;
 import yybos.hash.katarakt2.R;
 
 public class PopupErrorFragment extends Fragment {
@@ -69,8 +70,7 @@ public class PopupErrorFragment extends Fragment {
 
     @Override
     public void onDestroy () {
-        // little trick to get the chatFragment instance. Basically I create a tag when creating the chatFragment, then i can identify it here using the tag
-        ChatFragment chatFragmentInstance = ((ChatFragment) getParentFragmentManager().findFragmentByTag("chatFragmentInstance"));
+        ChatFragment chatFragmentInstance = ((MainActivity) getActivity()).getChatFragmentInstance();
 
         if (chatFragmentInstance != null)
             chatFragmentInstance.closeErrorMessage();

@@ -19,13 +19,10 @@ import yybos.hash.katarakt2.R;
 import yybos.hash.katarakt2.Socket.Objects.Chat;
 
 public class ChatsViewAdapter extends RecyclerView.Adapter<ChatsViewHolder> {
-    private List<Chat> chats = new ArrayList<>();
+    private final List<Chat> chats = new ArrayList<>();
     private ChatFragment chatFragmentInstance;
 
-    public ChatsViewAdapter (List<Chat> history, ChatFragment chatFragment) {
-        if (history != null)
-            this.chats = history;
-
+    public ChatsViewAdapter (ChatFragment chatFragment) {
         if (chatFragment != null)
             this.chatFragmentInstance = chatFragment;
     }
@@ -47,7 +44,7 @@ public class ChatsViewAdapter extends RecyclerView.Adapter<ChatsViewHolder> {
         Chat chat = this.chats.get(position);
 
         holder.nameTextView.setText(chat.getName());
-        holder.dateTextView.setText(String.valueOf(chat.getId()));
+        holder.dateTextView.setText(chat.getDate().toString());
 
         holder.constraintLayout.setOnClickListener(v -> {
             // animation

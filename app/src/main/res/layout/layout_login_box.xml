@@ -19,7 +19,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
-            android:text="Sex Penis"
+            android:text="Log in"
             android:textColor="@color/loginTextViewColor"
             android:textSize="20sp" />
 
@@ -30,6 +30,7 @@
             android:layout_marginBottom="5dp"
             android:background="@drawable/login_edittext_shape"
             android:hint="Email"
+            android:text="yybos.hash@gmail.com"
             android:paddingHorizontal="16dp"
             android:textColorHint="@color/loginEdittextHintColor"
             android:textSize="14sp" />
@@ -41,6 +42,7 @@
             android:layout_marginBottom="15dp"
             android:background="@drawable/login_edittext_shape"
             android:hint="Password"
+            android:text="123"
             android:paddingHorizontal="16dp"
             android:textColorHint="@color/loginEdittextHintColor"
             android:textSize="14sp" />
