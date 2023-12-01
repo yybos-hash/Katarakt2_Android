@@ -1,8 +1,10 @@
 package yybos.hash.katarakt2.Socket;
 
+import android.graphics.Color;
 import android.os.Looper;
 import android.util.Log;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -54,11 +56,16 @@ public class Client {
             SocketAddress mediaAddress = new InetSocketAddress(Constants.server, Constants.mediaPort);
 
             messageSocket.connect(messageAddress, 4500);
-//            mediaSocket.connect(downloadAddress, 4500);
+//            mediaSocket.connect(mediaAddress, 4500);
             // connect the clients
 
-            if (!messageSocket.isConnected())
+            if (!messageSocket.isConnected()) {
+                this.notifyMessageToListeners(Message.toMessage("Failed to connect to the server", "Katarakt"), false);
                 return;
+            }
+            if (!mediaSocket.isConnected()) {
+                this.notifyMessageToListeners(Message.toMessage("Failed to connect to the Media server. File upload and download will not be available", "Katarakt"), false);
+            }
 
             // set the threads
             Thread messageThread = new Thread(() -> handleMessage(messageSocket));
@@ -74,6 +81,8 @@ public class Client {
         }
     }
 
+    // server handlers
+
     private void handleMessage (Socket client) {
         Utils messageUtils = new Utils(client);
         this.messageUtils = messageUtils;
@@ -83,6 +92,7 @@ public class Client {
             messageUtils.sendRawMessage(Constants.version + ';' + mainActivity.getLoginEmail() + ';' + mainActivity.getLoginPassword() + ';' +  mainActivity.getLoginUsername());
 
             this.isConnected = true;
+            this.mainActivity.showCustomToast("Connected", Color.argb(255, 71, 181, 51));
 
             int packet;
             PacketObject packetObject;
@@ -175,6 +185,9 @@ public class Client {
     private void handleMedia (Socket client) {
 
     }
+
+    // methods to send objects
+
     private void sendPacketObject(PacketObject packet) {
         if (this.messageUtils == null || !this.isConnected)
             return;
@@ -188,6 +201,7 @@ public class Client {
             this.messageUtils.sendObject(packet);
         }
     }
+
     public void sendMessage (Message message) {
         this.sendPacketObject(message);
     }
@@ -197,6 +211,14 @@ public class Client {
     }
     public void getChats () {
         this.sendPacketObject(Command.getChats());
+    }
+
+    public void downloadFile (String filePath) {
+        // file path is actually the path of the file in the server os
+
+    }
+    public void uploadFile (File file) {
+
     }
 
     // listeners
@@ -212,7 +234,7 @@ public class Client {
     private void notifyMessageToListeners (Message message, boolean addToHistory) {
         if (addToHistory)
             // append message to history
-            this.mainActivity.getHistory().add(message);
+            this.mainActivity.getMessageHistory().add(message);
 
         for (ClientInterface listener : this.listeners)
             listener.onMessageReceived(message);

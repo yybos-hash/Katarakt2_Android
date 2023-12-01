@@ -70,7 +70,7 @@ public class PopupErrorFragment extends Fragment {
 
     @Override
     public void onDestroy () {
-        ChatFragment chatFragmentInstance = ((MainActivity) getActivity()).getChatFragmentInstance();
+        ChatFragment chatFragmentInstance = ((MainActivity) requireActivity()).getChatFragmentInstance();
 
         if (chatFragmentInstance != null)
             chatFragmentInstance.closeErrorMessage();

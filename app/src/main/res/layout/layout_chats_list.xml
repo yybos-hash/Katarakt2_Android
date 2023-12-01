@@ -5,7 +5,7 @@
     android:layout_height="match_parent">
 
     <LinearLayout
-        android:id="@+id/linearLayout"
+        android:id="@+id/chatsLinearLayout"
         android:layout_width="300dp"
         android:layout_height="match_parent"
         android:background="@drawable/chats_list_shape"

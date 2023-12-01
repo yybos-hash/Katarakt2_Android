@@ -3,6 +3,7 @@ package yybos.hash.katarakt2;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.os.Bundle;
+import android.os.Looper;
 import android.view.View;
 import android.widget.ImageView;
 
@@ -15,10 +16,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import yybos.hash.katarakt2.Fragments.ChatFragment;
+import yybos.hash.katarakt2.Fragments.CustomToastFragment;
 import yybos.hash.katarakt2.Fragments.LoginFragment;
 import yybos.hash.katarakt2.Fragments.SettingsFragment;
 import yybos.hash.katarakt2.Socket.Client;
 import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
+import yybos.hash.katarakt2.Socket.Objects.Chat;
 import yybos.hash.katarakt2.Socket.Objects.Message;
 
 public class MainActivity extends AppCompatActivity {
@@ -30,7 +33,9 @@ public class MainActivity extends AppCompatActivity {
     private ImageView buttonLogin;
 
     private Client client;
-    private List<Message> history;
+    private List<Message> messageHistory;
+    private List<Chat> chatsHistory;
+    // chats history will hold chats while the chatsFragment is null (So basically while the chatsFragment is not displayed, it holds the chats and then adds them to the adapter)
 
     private String loginEmail;
     private String loginPassword;
@@ -66,7 +71,8 @@ public class MainActivity extends AppCompatActivity {
         this.loginUsername = " ";
         // just to initialize it
 
-        this.history = new ArrayList<>();
+        this.messageHistory = new ArrayList<>();
+        this.chatsHistory = new ArrayList<>();
 
         this.client = new Client(this);
         this.client.tryConnection();
@@ -79,8 +85,8 @@ public class MainActivity extends AppCompatActivity {
         FragmentTransaction fragmentManager = getSupportFragmentManager().beginTransaction();
         fragmentManager.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out, R.anim.fragment_fade_in, R.anim.fragment_fade_out);
 
-        if (view == this.buttonChat)                                                  // see more in PopupErrorFragment.java about this tag (onDestroy())
-            fragmentManager.replace(R.id.activityFragmentContainerView, new ChatFragment(), "chatFragmentInstance");
+        if (view == this.buttonChat)
+            fragmentManager.replace(R.id.activityFragmentContainerView, new ChatFragment());
 
         else if (view == this.buttonSettings)
             fragmentManager.replace(R.id.activityFragmentContainerView, new SettingsFragment());
@@ -138,8 +144,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // histories
-    public List<Message> getHistory () {
-        return this.history;
+    public List<Message> getMessageHistory() {
+        return this.messageHistory;
+    }
+    public List<Chat> getChatsHistory () {
+        return this.chatsHistory;
     }
 
     // client
@@ -158,5 +167,38 @@ public class MainActivity extends AppCompatActivity {
 
     public ChatFragment getChatFragmentInstance () {
         return this.chatFragmentInstance;
+    }
+
+    public void showCustomToast (String message, int backgroundColor) {
+        Bundle args = new Bundle();
+        args.putString("message", message);
+        args.putInt("background", backgroundColor);
+
+        CustomToastFragment toastFragment = new CustomToastFragment();
+        toastFragment.setArguments(args);
+
+        FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
+
+        // Set custom animations for entering and exiting the fragment
+        fragmentTransaction.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out);
+
+        // if it's inside the main thread
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            // Replace the existing fragment with the new one
+            fragmentTransaction.replace(R.id.customToastFragmentView, toastFragment);
+
+            // Commit the transaction
+            fragmentTransaction.commit();
+        }
+        else {
+            // Call a function on the UI thread
+            this.runOnUiThread(() -> {
+                // Replace the existing fragment with the new one
+                fragmentTransaction.replace(R.id.customToastFragmentView, toastFragment);
+
+                // Commit the transaction
+                fragmentTransaction.commit();
+            });
+        }
     }
 }

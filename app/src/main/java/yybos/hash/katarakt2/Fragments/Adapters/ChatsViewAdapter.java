@@ -19,12 +19,15 @@ import yybos.hash.katarakt2.R;
 import yybos.hash.katarakt2.Socket.Objects.Chat;
 
 public class ChatsViewAdapter extends RecyclerView.Adapter<ChatsViewHolder> {
-    private final List<Chat> chats = new ArrayList<>();
+    private List<Chat> chats = new ArrayList<>();
     private ChatFragment chatFragmentInstance;
 
-    public ChatsViewAdapter (ChatFragment chatFragment) {
+    public ChatsViewAdapter (List<Chat> history, ChatFragment chatFragment) {
         if (chatFragment != null)
             this.chatFragmentInstance = chatFragment;
+
+        if (history != null)
+            this.chats = history;
     }
 
     public void addChat (Chat chat) {

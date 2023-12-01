@@ -64,7 +64,7 @@ public class ChatFragment extends Fragment implements ClientInterface {
         this.client = this.mainActivityInstance.getClient();
 
         // get message history if there are any messages previously sent
-        this.history = this.mainActivityInstance.getHistory();
+        this.history = this.mainActivityInstance.getMessageHistory();
 
         // listen to incoming messages
         this.mainActivityInstance.addListener(this);
@@ -151,7 +151,10 @@ public class ChatFragment extends Fragment implements ClientInterface {
         if (this.getContext() == null)
             return;
 
+        // clear chats history so the new one doesnt overlap the already existing one
+        this.mainActivityInstance.getChatsHistory().clear();
         this.client.getChats();
+        // get chats
 
         // create frame layout for popup fragment
         this.generalFrameLayout = new FrameLayout(this.getContext());
@@ -167,7 +170,7 @@ public class ChatFragment extends Fragment implements ClientInterface {
         // initiate fragment manager
         FragmentTransaction fragmentManager = getParentFragmentManager().beginTransaction();
 
-        fragmentManager.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out, R.anim.fragment_fade_in, R.anim.fragment_fade_out);
+        fragmentManager.setCustomAnimations(R.anim.chats_list_expand, R.anim.chats_list_contract);
         fragmentManager.add(this.generalFrameLayout.getId(), this.chatsFragment);
         fragmentManager.commit();
 
@@ -224,13 +227,10 @@ public class ChatFragment extends Fragment implements ClientInterface {
         if (this.chatsFragment == null)
             return;
 
-        FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
-        transaction.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out);
-        transaction.remove(this.chatsFragment);
-        transaction.commit();
-
         // remove after the animation finishes (125ms)
-        new Handler(Looper.getMainLooper()).postDelayed((Runnable) this::removeGeneralFrameLayout, 150);
+        new Handler(Looper.getMainLooper()).postDelayed(this::removeGeneralFrameLayout, 250);
+        this.mainActivityInstance.getChatsHistory().clear();
+        // clear the chats history
     }
     private void removeGeneralFrameLayout() {
         this.generalFrameLayout.removeAllViews();
@@ -262,6 +262,11 @@ public class ChatFragment extends Fragment implements ClientInterface {
     }
     @Override
     public void onChatReceived(Chat chat) {
+        if (this.chatsFragment == null) {
+            this.mainActivityInstance.getChatsHistory().add(chat);
+            return;
+        }
+
         // if it's inside the main thread
         if (Looper.myLooper() == Looper.getMainLooper()) {
             this.chatsFragment.addChat(chat);

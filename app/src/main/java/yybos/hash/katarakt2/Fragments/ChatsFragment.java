@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 
 import androidx.annotation.NonNull;
@@ -25,6 +26,7 @@ import yybos.hash.katarakt2.Socket.Objects.Chat;
 public class ChatsFragment extends Fragment {
     private MainActivity mainActivityInstance;
     private ChatsViewAdapter chatsAdapter;
+    private LinearLayout linearLayout;
 
     private ProgressBar progressBar;
 
@@ -47,10 +49,10 @@ public class ChatsFragment extends Fragment {
         if (root == null)
             return;
 
-        this.chatsAdapter = new ChatsViewAdapter(((MainActivity) getActivity()).getChatFragmentInstance());
+        this.chatsAdapter = new ChatsViewAdapter(this.mainActivityInstance.getChatsHistory(), ((MainActivity) requireActivity()).getChatFragmentInstance());
 
         RecyclerView recyclerView = root.findViewById(R.id.chatsRecyclerView);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(this.chatsAdapter);
         recyclerView.setOverScrollMode(View.OVER_SCROLL_NEVER);
 
@@ -58,6 +60,7 @@ public class ChatsFragment extends Fragment {
         closeButton.setOnClickListener(this::closeButton);
 
         this.progressBar = root.findViewById(R.id.chatsProgressBar);
+        this.linearLayout = root.findViewById(R.id.chatsLinearLayout);
     }
 
     // button click animation
@@ -65,7 +68,7 @@ public class ChatsFragment extends Fragment {
     @Override
     public void onDestroy () {
         // little trick to get the chatFragment instance. Basically I create a tag when creating the chatFragment, then i can identify it here using the tag
-        ChatFragment chatFragmentInstance = ((ChatFragment) getParentFragmentManager().findFragmentByTag("chatFragmentInstance"));
+        ChatFragment chatFragmentInstance = ((MainActivity) requireActivity()).getChatFragmentInstance();
 
         if (chatFragmentInstance != null)
             chatFragmentInstance.closeChatsList();
@@ -74,8 +77,10 @@ public class ChatsFragment extends Fragment {
     }
 
     private void closeButton (View view) {
+        this.linearLayout.removeAllViews();
+
         FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
-        transaction.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out);
+        transaction.setCustomAnimations(R.anim.chats_list_expand, R.anim.chats_list_contract);
         transaction.remove(this);
         transaction.commit();
     }
