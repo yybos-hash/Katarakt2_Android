@@ -1,12 +1,16 @@
 package yybos.hash.katarakt2.Fragments;
 
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -22,6 +26,7 @@ import yybos.hash.katarakt2.R;
 public class CustomToastFragment extends Fragment {
     private String message;
     private Color backgroundColor;
+    private TextView toast;
 
     public CustomToastFragment() {
         // Required empty public constructor
@@ -52,27 +57,59 @@ public class CustomToastFragment extends Fragment {
         View root = getView();
 
         LinearLayout background = root.findViewById(R.id.customToastBackground);
-        TextView toast = root.findViewById(R.id.customToastMessage);
+        this.toast = root.findViewById(R.id.customToastMessage);
 
-        background.setBackgroundColor(this.backgroundColor.toArgb());
-        toast.setText(this.message);
+        background.setBackground(this.createRoundedRectangleDrawable(this.backgroundColor.toArgb()));
+        this.toast.setText(this.message);
 
         // end toast after set time
-        new Handler(Looper.getMainLooper()).postDelayed(this::end, 3000);
+        new Handler(Looper.getMainLooper()).postDelayed(this::end, 4000);
     }
 
     private void end () {
-        // Get the FragmentManager
-        FragmentManager fragmentManager = requireActivity().getSupportFragmentManager();
+        View fragmentView = getView();
+        if (!isAdded())
+            return;
 
-        // Begin a transaction
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        if (fragmentView != null) {
+            Animation fadeOutAnimation = AnimationUtils.loadAnimation(requireContext(), R.anim.custom_toast_contract);
+            fragmentView.startAnimation(fadeOutAnimation);
 
-        fragmentTransaction.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out);
-        // Remove the current fragment
-        fragmentTransaction.remove(this);
+            fadeOutAnimation.setAnimationListener(new Animation.AnimationListener() {
+                @Override
+                public void onAnimationStart(Animation animation) {
+                    CustomToastFragment.this.toast.setAlpha(0f);
+                }
 
-        // Commit the transaction
-        fragmentTransaction.commit();
+                @Override
+                public void onAnimationEnd(Animation animation) {
+                    // Animation ended, remove the fragment
+                    FragmentManager fragmentManager = getParentFragmentManager();
+                    // transaction.setCustomAnimations(R.anim.custom_toast_expand, R.anim.custom_toast_contract);
+                    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                    fragmentTransaction.remove(CustomToastFragment.this);
+                    fragmentTransaction.commit();
+                }
+
+                @Override
+                public void onAnimationRepeat(Animation animation) {
+                    // Animation repeated
+                }
+            });
+        } else {
+            FragmentManager fragmentManager = getParentFragmentManager();
+            // transaction.setCustomAnimations(R.anim.custom_toast_expand, R.anim.custom_toast_contract);
+            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+            fragmentTransaction.remove(this);
+            fragmentTransaction.commit();
+        }
+    }
+    private Drawable createRoundedRectangleDrawable(int color) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setShape(GradientDrawable.RECTANGLE);
+        drawable.setColor(color);
+        drawable.setCornerRadius(15); // Set your desired corner radius
+
+        return drawable;
     }
 }

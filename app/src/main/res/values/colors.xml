@@ -5,9 +5,17 @@
     <color name="primaryColor">#171717</color>
     <color name="secondaryColor">#0C111C</color>
     <color name="absoluteBlack">#000000</color>
+    <color name="backgroundColor2">#22293A</color>
+    <color name="backgroundColor3">#2B3449</color>
+    <color name="backgroundColor4">#323C55</color>
 
-    <color name="edittextColor">#202839</color>
+
+    <color name="edittextColor">#1E2535</color>
     <color name="textViewColor">#E7ECEF</color>
+    <color name="textViewColor2">#BEC0C1</color>
+    <color name="textViewColor3">#9D9E9E</color>
+
+    <color name="buttonColor">#1E2535</color>
 
     <!--  view's color  -->
 
@@ -26,9 +34,10 @@
 
     <color name="chatEdittextColor">@color/edittextColor</color>
     <color name="chatEdittextHintColor">#8A7E7E7E</color>
+    <color name="chatButtonsShapeColor">@color/edittextColor</color>
 
     <color name="configTextViewColor">#C2C2BA</color>
-    <color name="configEdittextColor">@color/edittextColor</color>
+    <color name="configServerShapeColor">@color/edittextColor</color>
     <color name="configEdittextHintColor">#8A7E7E7E</color>
 
     <color name="popupErrorShapeColor">#4D242C3E</color>

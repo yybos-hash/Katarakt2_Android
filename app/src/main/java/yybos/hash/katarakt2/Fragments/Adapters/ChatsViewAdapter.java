@@ -32,7 +32,7 @@ public class ChatsViewAdapter extends RecyclerView.Adapter<ChatsViewHolder> {
 
     public void addChat (Chat chat) {
         this.chats.add(chat);
-        notifyItemChanged(this.chats.size() - 1);
+        notifyItemInserted(this.chats.size() - 1);
     }
 
     @NonNull

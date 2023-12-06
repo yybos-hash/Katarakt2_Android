@@ -16,6 +16,7 @@ import yybos.hash.katarakt2.MainActivity;
 import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
 import yybos.hash.katarakt2.Socket.Objects.Chat;
 import yybos.hash.katarakt2.Socket.Objects.Command;
+import yybos.hash.katarakt2.Socket.Objects.Login;
 import yybos.hash.katarakt2.Socket.Objects.Message;
 import yybos.hash.katarakt2.Socket.Objects.PacketObject;
 import yybos.hash.katarakt2.Socket.Objects.User;
@@ -24,6 +25,8 @@ public class Client {
     private final List<ClientInterface> listeners = new ArrayList<>();
 
     private boolean isConnected = false;
+    private String ipAddress;
+    private int port;
 
     private Utils messageUtils;
     private final MainActivity mainActivity;
@@ -32,15 +35,25 @@ public class Client {
 
     public Client (MainActivity mainActivity) {
         this.mainActivity = mainActivity;
+        this.user = new User();
     }
 
     public boolean isConnected () {
-        return isConnected;
+        return this.isConnected;
     }
 
     public void tryConnection () {
-        if (mainActivity.getLoginEmail().equals(" ") || mainActivity.getLoginPassword().equals(" "))
+        if (this.isConnected)
             return;
+
+        if (this.mainActivity.getLoginEmail().equals(" ") || this.mainActivity.getLoginPassword().equals(" "))
+            return;
+
+        this.ipAddress = this.mainActivity.getIpAddress();
+        this.port = this.mainActivity.getPort();
+
+        this.user.setEmail(this.mainActivity.getLoginEmail());
+        this.user.setPassword(this.mainActivity.getLoginPassword());
 
         Thread t1 = new Thread(this::connect);
         t1.start();
@@ -48,34 +61,23 @@ public class Client {
 
     private void connect () {
         try {
-            Socket messageSocket = new Socket();
-            Socket mediaSocket = new Socket();
+            Socket managerSocket = new Socket();
 
             // sets the ip and port of the servers
-            SocketAddress messageAddress = new InetSocketAddress(Constants.server, Constants.messagePort);
-            SocketAddress mediaAddress = new InetSocketAddress(Constants.server, Constants.mediaPort);
+            SocketAddress managerAddress = new InetSocketAddress(this.ipAddress, this.port);
 
-            messageSocket.connect(messageAddress, 4500);
-//            mediaSocket.connect(mediaAddress, 4500);
+            managerSocket.connect(managerAddress, 4000);
             // connect the clients
 
-            if (!messageSocket.isConnected()) {
+            if (!managerSocket.isConnected()) {
                 this.notifyMessageToListeners(Message.toMessage("Failed to connect to the server", "Katarakt"), false);
                 return;
             }
-            if (!mediaSocket.isConnected()) {
-                this.notifyMessageToListeners(Message.toMessage("Failed to connect to the Media server. File upload and download will not be available", "Katarakt"), false);
-            }
 
-            // set the threads
-            Thread messageThread = new Thread(() -> handleMessage(messageSocket));
-//            Thread mediaThread = new Thread(() -> handleMedia(mediaSocket));
-
-            // start the threads
-            messageThread.start();
-//            mediaThread.start();
+            this.handleMessage(managerSocket);
         } catch (Exception e) {
             Log.i("Client Connection", "Deu meme");
+            this.mainActivity.showCustomToast("Could not connect to " + this.ipAddress, Color.GRAY);
 
             this.isConnected = false;
         }
@@ -88,11 +90,13 @@ public class Client {
         this.messageUtils = messageUtils;
 
         try {
+            this.user.setUsername("Redmi");
+
             // send alllejdnaejkdklad
-            messageUtils.sendRawMessage(Constants.version + ';' + mainActivity.getLoginEmail() + ';' + mainActivity.getLoginPassword() + ';' +  mainActivity.getLoginUsername());
+            messageUtils.sendObject(Login.toLogin(Constants.version, Constants.messagePort, this.user.getEmail(), this.user.getPassword()));
 
             this.isConnected = true;
-            this.mainActivity.showCustomToast("Connected", Color.argb(255, 71, 181, 51));
+            this.mainActivity.showCustomToast("Connected", Color.argb(90, 85, 209, 63));
 
             int packet;
             PacketObject packetObject;
@@ -159,6 +163,16 @@ public class Client {
                         // yeah, the login info
                         this.user = user;
                     }
+                    else if (packetObject.getType() == PacketObject.Type.Command) {
+                        Command command = Command.fromString(rawMessage.toString());
+
+                        switch (command.getCommand()) {
+                            case "usernameRequest": {
+                                this.mainActivity.getChatFragmentInstance().displayInputPopup();
+                                break;
+                            }
+                        }
+                    }
                 }
             }
             catch (Exception e) {
@@ -166,6 +180,8 @@ public class Client {
 
                 System.out.println("Exception in client: " + client.getInetAddress().toString());
                 System.out.println(e.getMessage());
+
+                this.mainActivity.showCustomToast("Disconnected", Color.argb(90, 235, 64, 52));
 
                 // just tell the user that the connection was closed
                 Message conMessage = Message.toMessage("Connection abruptly interrupted by the server", "Socket");
@@ -203,6 +219,9 @@ public class Client {
     }
 
     public void sendMessage (Message message) {
+        if (!this.isConnected)
+            return;
+
         this.sendPacketObject(message);
     }
 
@@ -210,7 +229,11 @@ public class Client {
         this.sendPacketObject(Command.getChatHistory(chatId));
     }
     public void getChats () {
+        this.mainActivity.getChatsHistory().clear();
         this.sendPacketObject(Command.getChats());
+    }
+    public void setUsername (String username) {
+        this.sendPacketObject(Command.setUsername(username));
     }
 
     public void downloadFile (String filePath) {

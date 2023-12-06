@@ -1,6 +1,6 @@
 package yybos.hash.katarakt2.Fragments;
 
-import android.animation.ValueAnimator;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -8,8 +8,6 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -43,6 +41,7 @@ public class ChatFragment extends Fragment implements ClientInterface {
 
     private ChatsFragment chatsFragment;
     private PopupErrorFragment popupErrorFragment;
+    private InputPopupFragment inputPopupFragment;
 
     private ChatViewAdapter chatAdapter;
     private List<Message> history;
@@ -57,17 +56,6 @@ public class ChatFragment extends Fragment implements ClientInterface {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        this.mainActivityInstance = ((MainActivity) requireActivity());
-
-        // get client for sending messages, connecting, etc
-        this.client = this.mainActivityInstance.getClient();
-
-        // get message history if there are any messages previously sent
-        this.history = this.mainActivityInstance.getMessageHistory();
-
-        // listen to incoming messages
-        this.mainActivityInstance.addListener(this);
     }
 
     @Override
@@ -83,6 +71,23 @@ public class ChatFragment extends Fragment implements ClientInterface {
 
         View root = getView();
 
+
+
+        // changed all of this to the onViewCreated because of the back stack (the fragment is not destroyed neither created when its added to the back strack)
+        // but the view is destroyed and created again, so ill be using that
+        this.mainActivityInstance = ((MainActivity) requireActivity());
+
+        // get client for sending messages, connecting, etc
+        this.client = this.mainActivityInstance.getClient();
+
+        // get message history if there are any messages previously sent
+        this.history = this.mainActivityInstance.getMessageHistory();
+
+        // listen to incoming messages
+        this.mainActivityInstance.addListener(this);
+
+
+
         // move selection tab (I'm doing it from the fragment cause it will fix the issue where if I used the back stack trace the selectionTab wouldnt move)
         this.mainActivityInstance.moveSelectionTab(this);
 
@@ -93,14 +98,10 @@ public class ChatFragment extends Fragment implements ClientInterface {
 
         this.chatAdapter = new ChatViewAdapter(this.history);
 
-        chatsButton.setOnClickListener((v) -> {
-            this.buttonClickAnimation(v);
-            this.displayChatsList(v);
-        });
-        sendButton.setOnClickListener((v) -> {
-            this.buttonClickAnimation(v);
-            this.sendMessage(v);
-        });
+        // this.buttonClickAnimation(v);
+        chatsButton.setOnClickListener(this::displayChatsList);
+        // this.buttonClickAnimation(v);
+        sendButton.setOnClickListener(this::sendMessage);
 
         this.recyclerView = root.findViewById(R.id.chatRecycler);
         this.recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -111,23 +112,12 @@ public class ChatFragment extends Fragment implements ClientInterface {
         if (this.chatAdapter.getItemCount() > 0)
             this.scrollToLastMessage();
 
-        if (this.mainActivityInstance.getLoginEmail() == null || this.mainActivityInstance.getLoginPassword() == null) {
-            displayErrorMessage("Oh Noes!", "It looks like you are not logged in. LOG IN, BITCH", "Ok :(", "Shut the fuck up");
-        }
-
         if (!this.client.isConnected()) {
-            // displayErrorMessage("Oh Noes!", "It looks like you are not connected. CONNECT, BITCH", "Ok :(", "Shut the fuck up");
-
-            this.client.tryConnection();
+             this.displayErrorMessage("Oh Noes!", "It looks like you are not connected. CONNECT, BITCH", "Ok :(", "Shut the fuck up");
         }
-    }
-
-    // button click animation
-    private void buttonClickAnimation (View v) {
-        Animation animation = AnimationUtils.loadAnimation(this.getContext(), R.anim.button_clicked);
-        animation.setRepeatMode(ValueAnimator.REVERSE);
-
-        v.startAnimation(animation);
+        if (this.client.isConnected() && this.mainActivityInstance.getLoginUsername().trim().isEmpty()) {
+            this.displayInputPopup();
+        }
     }
 
     // send message through client
@@ -148,18 +138,14 @@ public class ChatFragment extends Fragment implements ClientInterface {
 
     // display things
     private void displayChatsList (View v) {
-        if (this.getContext() == null)
-            return;
-
-        // clear chats history so the new one doesnt overlap the already existing one
-        this.mainActivityInstance.getChatsHistory().clear();
         this.client.getChats();
         // get chats
 
         // create frame layout for popup fragment
-        this.generalFrameLayout = new FrameLayout(this.getContext());
+        this.generalFrameLayout = new FrameLayout(this.requireContext());
         this.generalFrameLayout.setId(View.generateViewId());
         this.generalFrameLayout.setOnClickListener(view -> this.closeChatsList());
+        this.generalFrameLayout.setBackgroundColor(Color.argb(100, 0, 0, 0));
 
         FrameLayout.LayoutParams fragmentFrameLayout = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         fragmentFrameLayout.gravity = Gravity.END;
@@ -210,7 +196,34 @@ public class ChatFragment extends Fragment implements ClientInterface {
         // add frame layout to constraintLayout
         this.constraintLayout.addView(this.generalFrameLayout, fragmentFrameLayout);
     }
+    public void displayInputPopup () {
+        if (this.getContext() == null)
+            return;
 
+        // create frame layout for popup fragment
+        this.generalFrameLayout = new FrameLayout(this.getContext());
+        this.generalFrameLayout.setId(View.generateViewId());
+        this.generalFrameLayout.setOnClickListener(view -> this.closeErrorMessage());
+
+        FrameLayout.LayoutParams fragmentFrameLayout = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        fragmentFrameLayout.gravity = Gravity.CENTER;
+
+        this.inputPopupFragment = new InputPopupFragment();
+
+        // initiate fragment manager and
+        FragmentTransaction fragmentManager = getParentFragmentManager().beginTransaction();
+
+        fragmentManager.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out, R.anim.fragment_fade_in, R.anim.fragment_fade_out);
+        fragmentManager.add(this.generalFrameLayout.getId(), this.inputPopupFragment);
+        fragmentManager.commit();
+
+        // add frame layout to constraintLayout
+        this.constraintLayout.addView(this.generalFrameLayout, fragmentFrameLayout);
+    }
+
+    public void closeInputPopup () {
+
+    }
     public void closeErrorMessage () {
         if (this.popupErrorFragment == null)
             return;
@@ -227,21 +240,20 @@ public class ChatFragment extends Fragment implements ClientInterface {
         if (this.chatsFragment == null)
             return;
 
-        // remove after the animation finishes (125ms)
-        new Handler(Looper.getMainLooper()).postDelayed(this::removeGeneralFrameLayout, 250);
-        this.mainActivityInstance.getChatsHistory().clear();
-        // clear the chats history
+        this.chatsFragment.destroy();
     }
-    private void removeGeneralFrameLayout() {
+    public void removeGeneralFrameLayout() {
         this.generalFrameLayout.removeAllViews();
         this.constraintLayout.removeView(this.generalFrameLayout);
     }
 
     // remove listener once the fragment is destroyed
     @Override
-    public void onDestroy () {
+    public void onDestroyView () {
+        // remove listener
         this.mainActivityInstance.removeListener(this);
-        super.onDestroy();
+
+        super.onDestroyView();
     }
 
     // events
@@ -262,7 +274,7 @@ public class ChatFragment extends Fragment implements ClientInterface {
     }
     @Override
     public void onChatReceived(Chat chat) {
-        if (this.chatsFragment == null) {
+        if (this.chatsFragment == null || !this.chatsFragment.isVisible()) {
             this.mainActivityInstance.getChatsHistory().add(chat);
             return;
         }

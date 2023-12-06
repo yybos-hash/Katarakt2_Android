@@ -37,11 +37,16 @@ public class MainActivity extends AppCompatActivity {
     private List<Chat> chatsHistory;
     // chats history will hold chats while the chatsFragment is null (So basically while the chatsFragment is not displayed, it holds the chats and then adds them to the adapter)
 
+    private String ipAddress;
+    private int port;
+
     private String loginEmail;
     private String loginPassword;
     private String loginUsername;
 
     private ChatFragment chatFragmentInstance;
+    private SettingsFragment settingsFragmentInstance;
+    private CustomToastFragment customToastInstance;
 
     public int currentChatId;
 
@@ -54,17 +59,17 @@ public class MainActivity extends AppCompatActivity {
         if (actionBar != null)
             actionBar.hide();
 
-        selectionTab = findViewById(R.id.activitySelectionTab);
+        this.selectionTab = findViewById(R.id.activitySelectionTab);
 
-        buttonChat = findViewById(R.id.activityButtonChat);
-        buttonSettings = findViewById(R.id.activityButtonSettings);
-        buttonLogin = findViewById(R.id.activityButtonLogin);
+        this.buttonChat = findViewById(R.id.activityButtonChat);
+        this.buttonSettings = findViewById(R.id.activityButtonSettings);
+        this.buttonLogin = findViewById(R.id.activityButtonLogin);
 
-        selectedTab = null;
+        this.selectedTab = null;
 
-        buttonChat.setOnClickListener(this::tabPressed);
-        buttonSettings.setOnClickListener(this::tabPressed);
-        buttonLogin.setOnClickListener(this::tabPressed);
+        this.buttonChat.setOnClickListener(this::tabPressed);
+        this.buttonSettings.setOnClickListener(this::tabPressed);
+        this.buttonLogin.setOnClickListener(this::tabPressed);
 
         this.loginEmail = " ";
         this.loginPassword = " ";
@@ -76,6 +81,8 @@ public class MainActivity extends AppCompatActivity {
 
         this.client = new Client(this);
         this.client.tryConnection();
+
+        this.tabPressed(this.buttonSettings);
     }
 
     private void tabPressed (View view) {
@@ -105,6 +112,7 @@ public class MainActivity extends AppCompatActivity {
         }
         else if (fragment instanceof SettingsFragment) {
             view = this.buttonSettings;
+            this.settingsFragmentInstance = (SettingsFragment) fragment;
         }
         else if (fragment instanceof LoginFragment) {
             view = this.buttonLogin;
@@ -113,7 +121,7 @@ public class MainActivity extends AppCompatActivity {
             return;
 
         ValueAnimator anim;
-        anim = ObjectAnimator.ofFloat(selectedTab != null ? (selectedTab.getX() - 55) : view.getX(), view.getX() - 55);
+        anim = ObjectAnimator.ofFloat(selectedTab != null ? (selectedTab.getX() - 52) : selectionTab.getX(), view.getX() - 52);
         //                                              :Sex_Penis:
 
         this.selectedTab = view;
@@ -122,15 +130,21 @@ public class MainActivity extends AppCompatActivity {
         anim.start();
     }
 
-    // login
+    // login and client
     public void setLoginEmail(String email) {
-        this.loginEmail = email;
+        this.loginEmail = email.replace("\0", "");
     }
     public void setLoginPassword (String password) {
-        this.loginPassword = password;
+        this.loginPassword = password.replace("\0", "");
     }
     public void setLoginUsername(String loginUsername) {
-        this.loginUsername = loginUsername;
+        this.loginUsername = loginUsername.replace("\0", "");
+    }
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
+    }
+    public void setPort(int port) {
+        this.port = port;
     }
 
     public String getLoginEmail () {
@@ -140,8 +154,15 @@ public class MainActivity extends AppCompatActivity {
         return this.loginPassword;
     }
     public String getLoginUsername() {
-        return loginUsername;
+        return this.loginUsername;
     }
+    public String getIpAddress() {
+        return this.ipAddress;
+    }
+    public int getPort() {
+        return this.port;
+    }
+
 
     // histories
     public List<Message> getMessageHistory() {
@@ -168,36 +189,43 @@ public class MainActivity extends AppCompatActivity {
     public ChatFragment getChatFragmentInstance () {
         return this.chatFragmentInstance;
     }
+    public SettingsFragment getSettingsFragmentInstance () {
+        return this.settingsFragmentInstance;
+    }
 
     public void showCustomToast (String message, int backgroundColor) {
         Bundle args = new Bundle();
         args.putString("message", message);
         args.putInt("background", backgroundColor);
 
-        CustomToastFragment toastFragment = new CustomToastFragment();
-        toastFragment.setArguments(args);
-
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
 
+        if (this.customToastInstance != null && this.customToastInstance.isAdded()) {
+            fragmentTransaction.remove(this.customToastInstance);
+        }
+
+        this.customToastInstance = new CustomToastFragment();
+        this.customToastInstance.setArguments(args);
+
         // Set custom animations for entering and exiting the fragment
-        fragmentTransaction.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out);
+        fragmentTransaction.setCustomAnimations(R.anim.custom_toast_expand, R.anim.custom_toast_contract);
 
         // if it's inside the main thread
         if (Looper.myLooper() == Looper.getMainLooper()) {
             // Replace the existing fragment with the new one
-            fragmentTransaction.replace(R.id.customToastFragmentView, toastFragment);
+            fragmentTransaction.replace(R.id.customToastFragmentView, this.customToastInstance);
 
             // Commit the transaction
-            fragmentTransaction.commit();
+            fragmentTransaction.commitNow();
         }
         else {
             // Call a function on the UI thread
             this.runOnUiThread(() -> {
                 // Replace the existing fragment with the new one
-                fragmentTransaction.replace(R.id.customToastFragmentView, toastFragment);
+                fragmentTransaction.replace(R.id.customToastFragmentView, this.customToastInstance);
 
                 // Commit the transaction
-                fragmentTransaction.commit();
+                fragmentTransaction.commitNow();
             });
         }
     }

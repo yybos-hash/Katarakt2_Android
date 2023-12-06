@@ -3,8 +3,8 @@
     android:shape="rectangle">
 
     <corners
-        android:radius="25dp" />
+        android:radius="20dp" />
 
     <solid
-        android:color="@color/chatEdittextColor" />
+        android:color="@color/buttonColor" />
 </shape>

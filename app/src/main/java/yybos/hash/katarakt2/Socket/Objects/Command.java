@@ -25,6 +25,14 @@ public class Command extends PacketObject {
 
         return from;
     }
+    public static Command setUsername (String username) {
+        Command from = new Command();
+        from.type = Type.Command;
+        from.e = "setUsername";
+        from.f = username;
+
+        return from;
+    }
     public static Command fromString (String json) {
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(Date.class, new ObjectDateDeserializer());

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_gravity="center"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/settings_server_shape"
+        android:orientation="vertical"
+        android:padding="30dp"
+        android:gravity="center"
+        android:layout_gravity="center_horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/serverInfoTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Edit Server"
+            android:textColor="@color/textViewColor"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/serverInfoIpEdittext"
+            android:layout_width="200dp"
+            android:layout_height="40dp"
+            android:layout_marginVertical="5dp"
+            android:background="@drawable/edittext_shape"
+            android:hint="IP"
+            android:textColor="@color/textViewColor"
+            android:paddingHorizontal="16dp"
+            android:textColorHint="@color/textViewColor3"
+            android:textSize="14sp" />
+
+        <EditText
+            android:id="@+id/serverInfoPortEdittext"
+            android:layout_width="200dp"
+            android:layout_height="40dp"
+            android:layout_marginBottom="18dp"
+            android:background="@drawable/edittext_shape"
+            android:hint="Port"
+            android:textColor="@color/textViewColor"
+            android:paddingHorizontal="16dp"
+            android:textColorHint="@color/textViewColor3"
+            android:textSize="14sp" />
+
+        <EditText
+            android:id="@+id/serverInfoEmailEdittext"
+            android:layout_width="200dp"
+            android:layout_height="40dp"
+            android:layout_marginBottom="5dp"
+            android:background="@drawable/edittext_shape"
+            android:hint="Email"
+            android:textColor="@color/textViewColor"
+            android:paddingHorizontal="16dp"
+            android:textColorHint="@color/textViewColor3"
+            android:textSize="14sp" />
+
+        <EditText
+            android:id="@+id/serverInfoPasswordEdittext"
+            android:layout_width="200dp"
+            android:layout_height="40dp"
+            android:layout_marginBottom="18dp"
+            android:background="@drawable/edittext_shape"
+            android:hint="Password"
+            android:textColor="@color/textViewColor"
+            android:paddingHorizontal="16dp"
+            android:textColorHint="@color/textViewColor3"
+            android:textSize="14sp" />
+
+        <Button
+            android:id="@+id/serverInfoSaveButton"
+            android:layout_width="200dp"
+            android:layout_height="40dp"
+            android:background="@drawable/button_shape"
+            android:textAllCaps="false"
+            android:textStyle="normal"
+            android:textColor="@color/textViewColor"
+            android:textSize="14sp"
+            android:text="Save" />
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

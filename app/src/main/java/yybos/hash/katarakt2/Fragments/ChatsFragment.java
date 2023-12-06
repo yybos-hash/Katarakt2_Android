@@ -1,6 +1,7 @@
 package yybos.hash.katarakt2.Fragments;
 
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,11 +18,12 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+
 import yybos.hash.katarakt2.Fragments.Adapters.ChatsViewAdapter;
 import yybos.hash.katarakt2.MainActivity;
 import yybos.hash.katarakt2.R;
 import yybos.hash.katarakt2.Socket.Objects.Chat;
-
 
 public class ChatsFragment extends Fragment {
     private MainActivity mainActivityInstance;
@@ -33,8 +35,6 @@ public class ChatsFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        this.mainActivityInstance = ((MainActivity) requireActivity());
     }
 
     @Override
@@ -49,7 +49,14 @@ public class ChatsFragment extends Fragment {
         if (root == null)
             return;
 
-        this.chatsAdapter = new ChatsViewAdapter(this.mainActivityInstance.getChatsHistory(), ((MainActivity) requireActivity()).getChatFragmentInstance());
+        this.mainActivityInstance = ((MainActivity) requireActivity());
+
+        this.progressBar = root.findViewById(R.id.chatsProgressBar);
+        this.linearLayout = root.findViewById(R.id.chatsLinearLayout);
+
+        List<Chat> chatsHistory = this.mainActivityInstance.getChatsHistory();
+
+        this.chatsAdapter = new ChatsViewAdapter(chatsHistory, ((MainActivity) requireActivity()).getChatFragmentInstance());
 
         RecyclerView recyclerView = root.findViewById(R.id.chatsRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -59,45 +66,48 @@ public class ChatsFragment extends Fragment {
         ImageView closeButton = root.findViewById(R.id.chatsClose);
         closeButton.setOnClickListener(this::closeButton);
 
-        this.progressBar = root.findViewById(R.id.chatsProgressBar);
-        this.linearLayout = root.findViewById(R.id.chatsLinearLayout);
+        // set everything to invisible so the chats_list_expand animation doesnt glitch the layout
+        closeButton.setVisibility(View.INVISIBLE);
+        recyclerView.setVisibility(View.INVISIBLE);
+
+        // make things visible again after the animation ends
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            closeButton.setVisibility(View.VISIBLE);
+            recyclerView.setVisibility(View.VISIBLE);
+        }, 200);
+
+        if (!this.mainActivityInstance.getClient().isConnected() || !chatsHistory.isEmpty())
+            this.progressBar.setVisibility(View.INVISIBLE);
     }
 
     // button click animation
 
-    @Override
-    public void onDestroy () {
-        // little trick to get the chatFragment instance. Basically I create a tag when creating the chatFragment, then i can identify it here using the tag
-        ChatFragment chatFragmentInstance = ((MainActivity) requireActivity()).getChatFragmentInstance();
-
-        if (chatFragmentInstance != null)
-            chatFragmentInstance.closeChatsList();
-
-        super.onDestroy();
+    private void closeButton (View view) {
+        this.destroy();
     }
 
-    private void closeButton (View view) {
+    public void addChat (Chat chat) {
+        // if it's inside the main thread
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            this.chatsAdapter.addChat(chat);
+            this.progressBar.setVisibility(View.INVISIBLE);
+        }
+        else {
+            // Call a function on the UI thread
+            mainActivityInstance.runOnUiThread(() -> {
+                ChatsFragment.this.chatsAdapter.addChat(chat);
+                ChatsFragment.this.progressBar.setVisibility(View.INVISIBLE);
+            });
+        }
+    }
+    public void destroy () {
         this.linearLayout.removeAllViews();
+        // remove after the animation finishes (125ms)
+        new Handler(Looper.getMainLooper()).postDelayed(() -> this.mainActivityInstance.getChatFragmentInstance().removeGeneralFrameLayout(), 125);
 
         FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
         transaction.setCustomAnimations(R.anim.chats_list_expand, R.anim.chats_list_contract);
         transaction.remove(this);
         transaction.commit();
-    }
-
-    public void addChat (Chat chat) {
-        if (this.progressBar.getVisibility() == View.VISIBLE)
-            this.progressBar.setVisibility(View.INVISIBLE);
-
-        // if it's inside the main thread
-        if (Looper.myLooper() == Looper.getMainLooper()) {
-            this.chatsAdapter.addChat(chat);
-        }
-        else {
-            // Call a function on the UI thread
-            mainActivityInstance.runOnUiThread(() -> {
-                this.chatsAdapter.addChat(chat);
-            });
-        }
     }
 }

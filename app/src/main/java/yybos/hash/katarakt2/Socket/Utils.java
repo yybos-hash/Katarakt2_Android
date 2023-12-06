@@ -59,7 +59,7 @@ public class Utils {
             return;
 
         try {
-            send(message);
+            send(message.replace("\0", ""));
         }
         catch (Exception e) {
             System.out.println(e.getMessage());
