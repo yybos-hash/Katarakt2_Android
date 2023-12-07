@@ -16,6 +16,8 @@
     <color name="textViewColor3">#9D9E9E</color>
 
     <color name="buttonColor">#1E2535</color>
+    <color name="toggleColor">#1E2535</color>
+    <color name="toggleEnabledColor">#309F43</color>
 
     <!--  view's color  -->
 

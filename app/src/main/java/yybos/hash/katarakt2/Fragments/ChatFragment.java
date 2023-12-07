@@ -102,6 +102,12 @@ public class ChatFragment extends Fragment implements ClientInterface {
         chatsButton.setOnClickListener(this::displayChatsList);
         // this.buttonClickAnimation(v);
         sendButton.setOnClickListener(this::sendMessage);
+        this.editText.setOnFocusChangeListener((v, focused) -> {
+            if (focused) {
+                if (ChatFragment.this.client == null || !ChatFragment.this.client.isConnected())
+                    this.displayErrorMessage("Hold Up!", "You not connected = you not send message", "Alright, smart boy", "Bet");
+            }
+        });
 
         this.recyclerView = root.findViewById(R.id.chatRecycler);
         this.recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -164,13 +170,11 @@ public class ChatFragment extends Fragment implements ClientInterface {
         this.constraintLayout.addView(this.generalFrameLayout, fragmentFrameLayout);
     }
     public void displayErrorMessage (String title, String description, String firstButtonText, String secondButtonText) {
-        if (this.getContext() == null)
-            return;
-
         // create frame layout for popup fragment
-        this.generalFrameLayout = new FrameLayout(this.getContext());
+        this.generalFrameLayout = new FrameLayout(this.requireContext());
         this.generalFrameLayout.setId(View.generateViewId());
-        this.generalFrameLayout.setOnClickListener(view -> {this.closeErrorMessage();});
+        this.generalFrameLayout.setOnClickListener(view -> this.closeErrorMessage());
+        this.generalFrameLayout.setBackgroundColor(Color.argb(100, 0, 0, 0));
 
         FrameLayout.LayoutParams fragmentFrameLayout = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         fragmentFrameLayout.gravity = Gravity.CENTER;
@@ -234,7 +238,7 @@ public class ChatFragment extends Fragment implements ClientInterface {
         transaction.commit();
 
         // remove after the animation finishes (125ms) // there is not a method to execute a function when the animation ends, so this is a substitute
-        new Handler(Looper.getMainLooper()).postDelayed(this::removeGeneralFrameLayout, 150);
+        new Handler(Looper.getMainLooper()).postDelayed(this::removeGeneralFrameLayout, 10);
     }
     public void closeChatsList () {
         if (this.chatsFragment == null)

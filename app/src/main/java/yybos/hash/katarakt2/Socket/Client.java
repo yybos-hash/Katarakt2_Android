@@ -25,6 +25,8 @@ public class Client {
     private final List<ClientInterface> listeners = new ArrayList<>();
 
     private boolean isConnected = false;
+    private boolean isConnecting = false;
+
     private String ipAddress;
     private int port;
 
@@ -41,9 +43,12 @@ public class Client {
     public boolean isConnected () {
         return this.isConnected;
     }
+    public boolean isConnecting () {
+        return this.isConnecting;
+    }
 
     public void tryConnection () {
-        if (this.isConnected)
+        if (this.isConnected || this.isConnecting)
             return;
 
         if (this.mainActivity.getLoginEmail().equals(" ") || this.mainActivity.getLoginPassword().equals(" "))
@@ -66,7 +71,10 @@ public class Client {
             // sets the ip and port of the servers
             SocketAddress managerAddress = new InetSocketAddress(this.ipAddress, this.port);
 
+            this.isConnecting = true;
             managerSocket.connect(managerAddress, 4000);
+            this.isConnecting = false;
+
             // connect the clients
 
             if (!managerSocket.isConnected()) {
@@ -80,6 +88,7 @@ public class Client {
             this.mainActivity.showCustomToast("Could not connect to " + this.ipAddress, Color.GRAY);
 
             this.isConnected = false;
+            this.isConnecting = false;
         }
     }
 
@@ -167,8 +176,9 @@ public class Client {
                         Command command = Command.fromString(rawMessage.toString());
 
                         switch (command.getCommand()) {
-                            case "usernameRequest": {
-                                this.mainActivity.getChatFragmentInstance().displayInputPopup();
+                            case "setUsername": {
+                                this.mainActivity.setLoginUsername(command.getE());
+
                                 break;
                             }
                         }
@@ -223,6 +233,12 @@ public class Client {
             return;
 
         this.sendPacketObject(message);
+    }
+    public void sendCommand (Command command) {
+        if (!this.isConnected)
+            return;
+
+        this.sendPacketObject(command);
     }
 
     public void getChatHistory (int chatId) {

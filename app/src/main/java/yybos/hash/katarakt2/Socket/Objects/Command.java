@@ -9,6 +9,30 @@ public class Command extends PacketObject {
     public String getCommand () {
         return this.e;
     }
+    public int getA () {
+        return this.a;
+    }
+    public int getB () {
+        return this.b;
+    }
+    public int getC () {
+        return this.c;
+    }
+    public int getD () {
+        return this.d;
+    }
+    public String getE () {
+        return this.e;
+    }
+    public String getF () {
+        return this.f;
+    }
+    public String getG () {
+        return this.g;
+    }
+    public String getH () {
+        return this.h;
+    }
 
     public static Command getChats () {
         Command from = new Command();
@@ -30,6 +54,14 @@ public class Command extends PacketObject {
         from.type = Type.Command;
         from.e = "setUsername";
         from.f = username;
+
+        return from;
+    }
+
+    public static Command toCommand (String command) {
+        Command from = new Command();
+        from.type = Type.Command;
+        from.e = command;
 
         return from;
     }

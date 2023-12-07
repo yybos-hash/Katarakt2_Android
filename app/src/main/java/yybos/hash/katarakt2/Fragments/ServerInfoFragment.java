@@ -91,7 +91,7 @@ public class ServerInfoFragment extends Fragment {
         passwordEdittext.setText(this.password);
 
         saveButton.setOnClickListener((v) -> {
-            SettingsFragment settingsFragmentInstance = ((MainActivity) requireActivity()).getSettingsFragmentInstance();
+            LoginFragment loginFragmentInstance = ((MainActivity) requireActivity()).getSettingsFragmentInstance();
 
             // if the number was not a number
             try {
@@ -104,15 +104,15 @@ public class ServerInfoFragment extends Fragment {
                 if (isCreating) {
                     // only if there is info
                     if (!this.serverIp.equals(server.serverIp) || this.serverPort != server.serverPort || !this.email.equals(server.email) || !this.password.equals(server.password))
-                        settingsFragmentInstance.addServer(server);
+                        loginFragmentInstance.addServer(server);
                 }
                 else {
                     // only if info was changed
                     if (!this.serverIp.equals(server.serverIp) || this.serverPort != server.serverPort || !this.email.equals(server.email) || !this.password.equals(server.password))
-                        settingsFragmentInstance.saveInfo(server);
+                        loginFragmentInstance.saveInfo(server);
                 }
 
-                settingsFragmentInstance.closeInfo();
+                loginFragmentInstance.closeInfo();
             }
             catch (NumberFormatException e) {
                 this.mainActivityInstance.showCustomToast("The port was not a number XD", Color.argb(90, 235, 64, 52));

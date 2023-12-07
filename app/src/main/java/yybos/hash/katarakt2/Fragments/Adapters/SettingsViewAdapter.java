@@ -7,22 +7,24 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.fragment.app.FragmentActivity;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import yybos.hash.katarakt2.Fragments.SettingsFragment;
+import yybos.hash.katarakt2.Fragments.LoginFragment;
 import yybos.hash.katarakt2.Fragments.ViewHolders.SettingsViewHolder;
 import yybos.hash.katarakt2.R;
 import yybos.hash.katarakt2.Socket.Objects.Server;
 
 public class SettingsViewAdapter extends RecyclerView.Adapter<SettingsViewHolder> {
     private final List<Server> servers = new ArrayList<>();
-    private final SettingsFragment settingsFragmentInstance;
+    private final LoginFragment loginFragmentInstance;
 
-    public SettingsViewAdapter (SettingsFragment fragment) {
-        this.settingsFragmentInstance = fragment;
+    public SettingsViewAdapter (LoginFragment fragment) {
+        this.loginFragmentInstance = fragment;
     }
 
     public void addServer (Server server) {
@@ -58,12 +60,21 @@ public class SettingsViewAdapter extends RecyclerView.Adapter<SettingsViewHolder
         Server server = this.servers.get(position);
 
         holder.setInfo(server);
-        holder.constraintLayout.setOnLongClickListener((v) -> {
-            this.settingsFragmentInstance.openInfo(holder);
+
+        // Dynamically add CustomToggleFragment to the FragmentContainerView
+        FragmentTransaction transaction = ((FragmentActivity) holder.itemView.getContext()).getSupportFragmentManager().beginTransaction();
+        transaction.replace(holder.fragmentContainer.getId(), holder.toggleInstance);
+        transaction.commit();
+
+        holder.mainLinearLayout.setOnLongClickListener((v) -> {
+            this.loginFragmentInstance.openInfo(holder);
             return true;
         });
-        holder.constraintLayout.setOnClickListener((v) -> {
-            this.settingsFragmentInstance.tryConnection(server);
+        holder.mainLinearLayout.setOnClickListener((v) -> {
+            this.loginFragmentInstance.tryConnection(server);
+        });
+        holder.fragmentContainer.setOnClickListener((v) -> {
+            holder.toggleInstance.toggle();
         });
     }
 

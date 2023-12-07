@@ -17,8 +17,8 @@ import java.util.List;
 
 import yybos.hash.katarakt2.Fragments.ChatFragment;
 import yybos.hash.katarakt2.Fragments.CustomToastFragment;
-import yybos.hash.katarakt2.Fragments.LoginFragment;
 import yybos.hash.katarakt2.Fragments.SettingsFragment;
+import yybos.hash.katarakt2.Fragments.LoginFragment;
 import yybos.hash.katarakt2.Socket.Client;
 import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
 import yybos.hash.katarakt2.Socket.Objects.Chat;
@@ -45,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
     private String loginUsername;
 
     private ChatFragment chatFragmentInstance;
-    private SettingsFragment settingsFragmentInstance;
+    private LoginFragment loginFragmentInstance;
     private CustomToastFragment customToastInstance;
 
     public int currentChatId;
@@ -81,8 +81,6 @@ public class MainActivity extends AppCompatActivity {
 
         this.client = new Client(this);
         this.client.tryConnection();
-
-        this.tabPressed(this.buttonSettings);
     }
 
     private void tabPressed (View view) {
@@ -96,10 +94,10 @@ public class MainActivity extends AppCompatActivity {
             fragmentManager.replace(R.id.activityFragmentContainerView, new ChatFragment());
 
         else if (view == this.buttonSettings)
-            fragmentManager.replace(R.id.activityFragmentContainerView, new SettingsFragment());
+            fragmentManager.replace(R.id.activityFragmentContainerView, new LoginFragment());
 
         else if (view == this.buttonLogin)
-            fragmentManager.replace(R.id.activityFragmentContainerView, new LoginFragment());
+            fragmentManager.replace(R.id.activityFragmentContainerView, new SettingsFragment());
 
         fragmentManager.addToBackStack(null).commit();
     }
@@ -110,27 +108,25 @@ public class MainActivity extends AppCompatActivity {
             view = this.buttonChat;
             this.chatFragmentInstance = (ChatFragment) fragment;
         }
-        else if (fragment instanceof SettingsFragment) {
-            view = this.buttonSettings;
-            this.settingsFragmentInstance = (SettingsFragment) fragment;
-        }
         else if (fragment instanceof LoginFragment) {
+            view = this.buttonSettings;
+            this.loginFragmentInstance = (LoginFragment) fragment;
+        }
+        else if (fragment instanceof SettingsFragment) {
             view = this.buttonLogin;
         }
         else
             return;
 
-        ValueAnimator anim;
-        anim = ObjectAnimator.ofFloat(selectedTab != null ? (selectedTab.getX() - 52) : selectionTab.getX(), view.getX() - 52);
-        //                                              :Sex_Penis:
+        float targetX = view.getX() + (view.getWidth() - this.selectionTab.getWidth()) / 2;
 
-        this.selectedTab = view;
-
-        anim.addUpdateListener(valueAnimator -> selectionTab.setX((float) valueAnimator.getAnimatedValue()));
+        ValueAnimator anim = ObjectAnimator.ofFloat(this.selectionTab.getX(), targetX);
+        anim.addUpdateListener(valueAnimator -> this.selectionTab.setX((float) valueAnimator.getAnimatedValue()));
         anim.start();
     }
 
     // login and client
+
     public void setLoginEmail(String email) {
         this.loginEmail = email.replace("\0", "");
     }
@@ -165,6 +161,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     // histories
+
     public List<Message> getMessageHistory() {
         return this.messageHistory;
     }
@@ -173,6 +170,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // client
+
     public Client getClient () {
         return this.client;
     }
@@ -189,8 +187,8 @@ public class MainActivity extends AppCompatActivity {
     public ChatFragment getChatFragmentInstance () {
         return this.chatFragmentInstance;
     }
-    public SettingsFragment getSettingsFragmentInstance () {
-        return this.settingsFragmentInstance;
+    public LoginFragment getSettingsFragmentInstance () {
+        return this.loginFragmentInstance;
     }
 
     public void showCustomToast (String message, int backgroundColor) {
