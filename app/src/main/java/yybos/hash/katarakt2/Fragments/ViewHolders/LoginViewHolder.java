@@ -9,11 +9,11 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.FragmentContainerView;
 import androidx.recyclerview.widget.RecyclerView;
 
-import yybos.hash.katarakt2.Fragments.CustomToggleFragment;
+import yybos.hash.katarakt2.Fragments.Custom.CustomToggleFragment;
 import yybos.hash.katarakt2.R;
 import yybos.hash.katarakt2.Socket.Objects.Server;
 
-public class SettingsViewHolder extends RecyclerView.ViewHolder {
+public class LoginViewHolder extends RecyclerView.ViewHolder {
     public TextView serverIp;
     public TextView serverPort;
     public ConstraintLayout constraintLayout;
@@ -26,7 +26,7 @@ public class SettingsViewHolder extends RecyclerView.ViewHolder {
 
     public boolean isDefault = false;
 
-    public SettingsViewHolder(@NonNull View itemView) {
+    public LoginViewHolder(@NonNull View itemView) {
         super(itemView);
 
         View root = itemView.getRootView();

@@ -1,5 +1,6 @@
-package yybos.hash.katarakt2.Fragments;
+package yybos.hash.katarakt2.Fragments.Popup;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,6 +10,7 @@ import android.widget.EditText;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -19,7 +21,6 @@ public class InputPopupFragment extends Fragment {
     private MainActivity mainActivityInstance;
 
     public InputPopupFragment () {
-
     }
 
     @Override
@@ -37,23 +38,48 @@ public class InputPopupFragment extends Fragment {
     public void onViewCreated (@NonNull View view, @Nullable Bundle savedInstanceState) {
         View root = view.getRootView();
 
+        String requestKey;
+        if (getArguments() != null)
+            requestKey = getArguments().getString("resultKey");
+        else {
+            requestKey = "";
+        }
+
         this.mainActivityInstance = (MainActivity) requireActivity();
 
-        EditText usernameEdittext = root.findViewById(R.id.inputPopupUsername);
+        EditText inputEdittext = root.findViewById(R.id.inputPopupEdittext);
 
         Button acceptButton = root.findViewById(R.id.inputPopupAcceptButton);
         Button cancelButton = root.findViewById(R.id.inputPopupCancelButton);
 
         acceptButton.setOnClickListener((v) -> {
-            String username = usernameEdittext.getText().toString().trim();
+            String content = inputEdittext.getText().toString().trim();
 
-            if (username.isEmpty()) {
-
+            if (content.isEmpty()) {
+                InputPopupFragment.this.mainActivityInstance.showCustomToast("Nuh uh. You either press cancel or write something", Color.argb(90, 235, 64, 52));
             }
             else {
-                this.mainActivityInstance.setLoginUsername(username);
-                this.mainActivityInstance.getClient().setUsername(username);
+                Bundle result = new Bundle();
+                result.putString("inputResult", content);
+                getParentFragmentManager().setFragmentResult(requestKey, result);
+
+                InputPopupFragment.this.destroy();
             }
         });
+        cancelButton.setOnClickListener((v) -> {
+            InputPopupFragment.this.destroy();
+        });
+    }
+
+    @Override
+    public void onDestroyView () {
+
+        super.onDestroyView();
+    }
+
+    private void destroy () {
+        FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+        transaction.remove(InputPopupFragment.this);
+        transaction.commit();
     }
 }

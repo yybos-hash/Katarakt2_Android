@@ -17,32 +17,29 @@ import com.google.gson.GsonBuilder;
 import java.sql.Date;
 
 public class Message extends PacketObject {
-    public int getId () {
-        return this.id;
-    }
+    private User user;
+
     public String getMessage () {
         return this.e;
     }
     public int getChat () {
         return this.a;
     }
-    public String getUsername () {
-        return this.f;
-    }
-    public int getUserId () {
-        return this.b;
-    }
-    public Date getDate () {
-        return this.date;
+    public User getUser () {
+        return this.user;
     }
 
-    public static Message toMessage (String message, int chat, String username, int userId) {
+    public void setUser (User user) {
+        this.user = user;
+    }
+
+    public static Message toMessage (String message, int chat, String username, User user) {
         Message from = new Message();
         from.type = Type.Message;
         from.e = message;
         from.a = chat;
         from.f = username;
-        from.b = userId;
+        from.user = user;
         from.date = new Date(System.currentTimeMillis());
 
         return from;

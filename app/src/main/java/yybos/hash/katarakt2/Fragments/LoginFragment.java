@@ -33,8 +33,8 @@ import java.io.OutputStreamWriter;
 import java.lang.reflect.Type;
 import java.util.List;
 
-import yybos.hash.katarakt2.Fragments.Adapters.SettingsViewAdapter;
-import yybos.hash.katarakt2.Fragments.ViewHolders.SettingsViewHolder;
+import yybos.hash.katarakt2.Fragments.ViewAdapters.LoginViewAdapter;
+import yybos.hash.katarakt2.Fragments.ViewHolders.LoginViewHolder;
 import yybos.hash.katarakt2.MainActivity;
 import yybos.hash.katarakt2.R;
 import yybos.hash.katarakt2.Socket.Constants;
@@ -43,8 +43,8 @@ import yybos.hash.katarakt2.Socket.Objects.Server;
 public class LoginFragment extends Fragment {
     private MainActivity mainActivityInstance;
 
-    private SettingsViewAdapter settingsAdapter;
-    private SettingsViewHolder serverViewHolder;
+    private LoginViewAdapter settingsAdapter;
+    private LoginViewHolder serverViewHolder;
 
     private FrameLayout generalFrameLayout;
     private ConstraintLayout constraintLayout;
@@ -67,7 +67,7 @@ public class LoginFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_settings, container, false);
+        return inflater.inflate(R.layout.fragment_login, container, false);
     }
 
     @Override
@@ -79,16 +79,16 @@ public class LoginFragment extends Fragment {
         // move selection tab (I'm doing it from the fragment cause it will fix the issue where if I used the back stack trace the selectionTab wouldnt move)
         this.mainActivityInstance.moveSelectionTab(this);
 
-        this.settingsAdapter = new SettingsViewAdapter(this);
+        this.settingsAdapter = new LoginViewAdapter(this);
 
-        RecyclerView recyclerView = root.findViewById(R.id.configRecyclerView);
+        RecyclerView recyclerView = root.findViewById(R.id.loginRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setAdapter(settingsAdapter);
         recyclerView.setOverScrollMode(View.OVER_SCROLL_NEVER);
 
-        this.constraintLayout = root.findViewById(R.id.configConstraintLayout);
+        this.constraintLayout = root.findViewById(R.id.loginConstraintLayout);
 
-        this.floatingButton = root.findViewById(R.id.configFloatingButton);
+        this.floatingButton = root.findViewById(R.id.loginFloatingButton);
         this.floatingButton.setOnClickListener((v) -> {
             this.createInfo();
         });
@@ -134,7 +134,7 @@ public class LoginFragment extends Fragment {
         // add frame layout to constraintLayout
         this.constraintLayout.addView(this.generalFrameLayout, frameLayoutParams);
     }
-    public void openInfo (SettingsViewHolder viewHolder) {
+    public void openInfo (LoginViewHolder viewHolder) {
         if (viewHolder == null)
             return;
 

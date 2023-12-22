@@ -1,5 +1,6 @@
 package yybos.hash.katarakt2.Fragments.ViewHolders;
 
+
 import android.view.View;
 import android.widget.TextView;
 

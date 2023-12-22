@@ -1,11 +1,8 @@
-package yybos.hash.katarakt2.Fragments.Adapters;
+package yybos.hash.katarakt2.Fragments.ViewAdapters;
 
-import android.animation.ValueAnimator;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -46,17 +43,13 @@ public class ChatsViewAdapter extends RecyclerView.Adapter<ChatsViewHolder> {
     public void onBindViewHolder(@NonNull ChatsViewHolder holder, int position) {
         Chat chat = this.chats.get(position);
 
-        holder.nameTextView.setText(chat.getName());
-        holder.dateTextView.setText(chat.getDate().toString());
+        if (chat.getName() != null)
+            holder.nameTextView.setText(chat.getName());
+
+        if (chat.getDate() != null)
+            holder.dateTextView.setText(chat.getDate().toString());
 
         holder.constraintLayout.setOnClickListener(v -> {
-            // animation
-            Animation animation = AnimationUtils.loadAnimation(this.chatFragmentInstance.getContext(), R.anim.button_clicked);
-            animation.setRepeatMode(ValueAnimator.REVERSE);
-
-            v.startAnimation(animation);
-            //
-
             this.chatFragmentInstance.updateMessageHistory(chat.getId());
             this.chatFragmentInstance.closeChatsList();
         });

@@ -1,4 +1,4 @@
-package yybos.hash.katarakt2.Fragments;
+package yybos.hash.katarakt2.Fragments.Popup;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -13,6 +13,7 @@ import androidx.fragment.app.FragmentTransaction;
 
 import org.jetbrains.annotations.Nullable;
 
+import yybos.hash.katarakt2.Fragments.ChatFragment;
 import yybos.hash.katarakt2.MainActivity;
 import yybos.hash.katarakt2.R;
 

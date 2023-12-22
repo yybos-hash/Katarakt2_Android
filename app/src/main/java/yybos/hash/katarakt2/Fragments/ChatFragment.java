@@ -2,7 +2,6 @@ package yybos.hash.katarakt2.Fragments;
 
 import android.graphics.Color;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.Looper;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -23,13 +22,16 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-import yybos.hash.katarakt2.Fragments.Adapters.ChatViewAdapter;
+import yybos.hash.katarakt2.Fragments.Popup.InputPopupFragment;
+import yybos.hash.katarakt2.Fragments.Popup.PopupErrorFragment;
+import yybos.hash.katarakt2.Fragments.ViewAdapters.ChatViewAdapter;
 import yybos.hash.katarakt2.MainActivity;
 import yybos.hash.katarakt2.R;
 import yybos.hash.katarakt2.Socket.Client;
 import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
 import yybos.hash.katarakt2.Socket.Objects.Chat;
 import yybos.hash.katarakt2.Socket.Objects.Message;
+import yybos.hash.katarakt2.Socket.Objects.User;
 
 public class ChatFragment extends Fragment implements ClientInterface {
     private ConstraintLayout constraintLayout;
@@ -104,8 +106,16 @@ public class ChatFragment extends Fragment implements ClientInterface {
         sendButton.setOnClickListener(this::sendMessage);
         this.editText.setOnFocusChangeListener((v, focused) -> {
             if (focused) {
-                if (ChatFragment.this.client == null || !ChatFragment.this.client.isConnected())
+                if (ChatFragment.this.client == null || !ChatFragment.this.client.isConnected()) {
+                    v.clearFocus();
                     this.displayErrorMessage("Hold Up!", "You not connected = you not send message", "Alright, smart boy", "Bet");
+                    return;
+                }
+
+                if (ChatFragment.this.mainActivityInstance.currentChatId <= 0) {
+                    v.clearFocus();
+                    ChatFragment.this.mainActivityInstance.showCustomToast("No chat selected", Color.argb(90, 235, 64, 52));
+                }
             }
         });
 
@@ -118,26 +128,34 @@ public class ChatFragment extends Fragment implements ClientInterface {
         if (this.chatAdapter.getItemCount() > 0)
             this.scrollToLastMessage();
 
-        if (!this.client.isConnected()) {
+        if (!this.client.isConnected())
              this.displayErrorMessage("Oh Noes!", "It looks like you are not connected. CONNECT, BITCH", "Ok :(", "Shut the fuck up");
-        }
-        if (this.client.isConnected() && this.mainActivityInstance.getLoginUsername().trim().isEmpty()) {
+
+        if (this.mainActivityInstance.getLoginUsername().trim().isEmpty() && this.client.isConnected())
             this.displayInputPopup();
-        }
     }
 
     // send message through client
     private void sendMessage (View v) {
+        if (!this.client.isConnected())
+            return;
+
+        if (ChatFragment.this.mainActivityInstance.currentChatId <= 0) {
+            ChatFragment.this.mainActivityInstance.showCustomToast("No chat selected", Color.argb(90, 235, 64, 52));
+            return;
+        }
+
         String content = this.editText.getText().toString().trim().replace("\0", ""); // just to make sure, remove any possible null characters
         if (content.trim().isEmpty())
             return;
 
         this.editText.setText("");
 
-        Message message = Message.toMessage(content, this.mainActivityInstance.currentChatId, this.client.user.getUsername(), this.client.user.getId());
+        Message message = Message.toMessage(content, this.mainActivityInstance.currentChatId, this.client.user.getUsername(), this.client.user);
 
         this.client.sendMessage(message);
         this.chatAdapter.addMessage(message);
+        this.history.add(message);
 
         this.scrollToLastMessage();
     }
@@ -163,6 +181,7 @@ public class ChatFragment extends Fragment implements ClientInterface {
         FragmentTransaction fragmentManager = getParentFragmentManager().beginTransaction();
 
         fragmentManager.setCustomAnimations(R.anim.chats_list_expand, R.anim.chats_list_contract);
+        fragmentManager.addToBackStack(null);
         fragmentManager.add(this.generalFrameLayout.getId(), this.chatsFragment);
         fragmentManager.commit();
 
@@ -207,26 +226,54 @@ public class ChatFragment extends Fragment implements ClientInterface {
         // create frame layout for popup fragment
         this.generalFrameLayout = new FrameLayout(this.getContext());
         this.generalFrameLayout.setId(View.generateViewId());
-        this.generalFrameLayout.setOnClickListener(view -> this.closeErrorMessage());
+        this.generalFrameLayout.setOnClickListener(view -> this.closeInputPopup());
+        this.generalFrameLayout.setBackgroundColor(Color.argb(100, 0, 0, 0));
 
         FrameLayout.LayoutParams fragmentFrameLayout = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         fragmentFrameLayout.gravity = Gravity.CENTER;
 
         this.inputPopupFragment = new InputPopupFragment();
 
-        // initiate fragment manager and
+        Bundle args = new Bundle();
+        args.putString("resultKey", "chatNewUsername");
+
+        this.inputPopupFragment.setArguments(args);
+
+        // initiate fragment manager
         FragmentTransaction fragmentManager = getParentFragmentManager().beginTransaction();
 
         fragmentManager.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out, R.anim.fragment_fade_in, R.anim.fragment_fade_out);
         fragmentManager.add(this.generalFrameLayout.getId(), this.inputPopupFragment);
         fragmentManager.commit();
 
+        getParentFragmentManager().setFragmentResultListener("chatNewUsername", this.inputPopupFragment, (requestKey, result) -> {
+            String data = result.getString("inputResult");
+
+            if (data == null)
+                return;
+
+            User newUser = User.toUser(ChatFragment.this.mainActivityInstance.getClient().user.getId(), data, null, null);
+
+            ChatFragment.this.mainActivityInstance.setLoginUsername(data);
+            ChatFragment.this.mainActivityInstance.getClient().setUsername(data);
+
+            ChatFragment.this.chatAdapter.updateUsername(newUser);
+        });
+
         // add frame layout to constraintLayout
         this.constraintLayout.addView(this.generalFrameLayout, fragmentFrameLayout);
     }
 
     public void closeInputPopup () {
+        if (this.inputPopupFragment == null)
+            return;
 
+        FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+        transaction.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out);
+        transaction.remove(this.inputPopupFragment);
+        transaction.commit();
+
+        this.removeGeneralFrameLayout();
     }
     public void closeErrorMessage () {
         if (this.popupErrorFragment == null)
@@ -237,8 +284,7 @@ public class ChatFragment extends Fragment implements ClientInterface {
         transaction.remove(this.popupErrorFragment);
         transaction.commit();
 
-        // remove after the animation finishes (125ms) // there is not a method to execute a function when the animation ends, so this is a substitute
-        new Handler(Looper.getMainLooper()).postDelayed(this::removeGeneralFrameLayout, 10);
+        this.removeGeneralFrameLayout();
     }
     public void closeChatsList () {
         if (this.chatsFragment == null)

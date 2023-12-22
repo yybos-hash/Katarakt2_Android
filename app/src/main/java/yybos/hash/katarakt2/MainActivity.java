@@ -3,6 +3,7 @@ package yybos.hash.katarakt2;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 import android.widget.ImageView;
@@ -16,9 +17,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import yybos.hash.katarakt2.Fragments.ChatFragment;
-import yybos.hash.katarakt2.Fragments.CustomToastFragment;
-import yybos.hash.katarakt2.Fragments.SettingsFragment;
+import yybos.hash.katarakt2.Fragments.Custom.CustomToastFragment;
 import yybos.hash.katarakt2.Fragments.LoginFragment;
+import yybos.hash.katarakt2.Fragments.SettingsFragment;
 import yybos.hash.katarakt2.Socket.Client;
 import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
 import yybos.hash.katarakt2.Socket.Objects.Chat;
@@ -93,10 +94,10 @@ public class MainActivity extends AppCompatActivity {
         if (view == this.buttonChat)
             fragmentManager.replace(R.id.activityFragmentContainerView, new ChatFragment());
 
-        else if (view == this.buttonSettings)
+        else if (view == this.buttonLogin)
             fragmentManager.replace(R.id.activityFragmentContainerView, new LoginFragment());
 
-        else if (view == this.buttonLogin)
+        else if (view == this.buttonSettings)
             fragmentManager.replace(R.id.activityFragmentContainerView, new SettingsFragment());
 
         fragmentManager.addToBackStack(null).commit();
@@ -109,16 +110,18 @@ public class MainActivity extends AppCompatActivity {
             this.chatFragmentInstance = (ChatFragment) fragment;
         }
         else if (fragment instanceof LoginFragment) {
-            view = this.buttonSettings;
+            view = this.buttonLogin;
             this.loginFragmentInstance = (LoginFragment) fragment;
         }
         else if (fragment instanceof SettingsFragment) {
-            view = this.buttonLogin;
+            view = this.buttonSettings;
         }
         else
             return;
 
-        float targetX = view.getX() + (view.getWidth() - this.selectionTab.getWidth()) / 2;
+        this.selectedTab = view;
+
+        float targetX = view.getX() + ((float) view.getWidth() - (float) this.selectionTab.getWidth()) / 2;
 
         ValueAnimator anim = ObjectAnimator.ofFloat(this.selectionTab.getX(), targetX);
         anim.addUpdateListener(valueAnimator -> this.selectionTab.setX((float) valueAnimator.getAnimatedValue()));
@@ -208,23 +211,14 @@ public class MainActivity extends AppCompatActivity {
         // Set custom animations for entering and exiting the fragment
         fragmentTransaction.setCustomAnimations(R.anim.custom_toast_expand, R.anim.custom_toast_contract);
 
-        // if it's inside the main thread
-        if (Looper.myLooper() == Looper.getMainLooper()) {
+        // Call a function on the UI thread
+        this.runOnUiThread(() -> {
             // Replace the existing fragment with the new one
             fragmentTransaction.replace(R.id.customToastFragmentView, this.customToastInstance);
 
+            // Use a Handler to post the transaction on the main thread
             // Commit the transaction
-            fragmentTransaction.commitNow();
-        }
-        else {
-            // Call a function on the UI thread
-            this.runOnUiThread(() -> {
-                // Replace the existing fragment with the new one
-                fragmentTransaction.replace(R.id.customToastFragmentView, this.customToastInstance);
-
-                // Commit the transaction
-                fragmentTransaction.commitNow();
-            });
-        }
+            new Handler(Looper.getMainLooper()).post(fragmentTransaction::commitNow);
+        });
     }
 }

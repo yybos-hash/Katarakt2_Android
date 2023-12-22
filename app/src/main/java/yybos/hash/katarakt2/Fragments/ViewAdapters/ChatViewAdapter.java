@@ -1,4 +1,4 @@
-package yybos.hash.katarakt2.Fragments.Adapters;
+package yybos.hash.katarakt2.Fragments.ViewAdapters;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,19 +13,31 @@ import java.util.List;
 import yybos.hash.katarakt2.Fragments.ViewHolders.ChatViewHolder;
 import yybos.hash.katarakt2.R;
 import yybos.hash.katarakt2.Socket.Objects.Message;
+import yybos.hash.katarakt2.Socket.Objects.User;
 
 public class ChatViewAdapter extends RecyclerView.Adapter<ChatViewHolder> {
     private List<Message> messages = new ArrayList<>();
 
     public ChatViewAdapter (List<Message> history) {
         if (history != null && !history.isEmpty()) {
-            this.messages = history;
+            this.messages = new ArrayList<>(history);
         }
     }
 
     public void addMessage (Message message) {
         this.messages.add(message);
         notifyItemChanged(this.messages.size() - 1);
+    }
+    public void updateUsername (User user) {
+        for (int i = 0; i < this.messages.size(); i++) {
+            Message message = this.messages.get(i);
+
+            if (message.getUser().getId() == user.getId()) {
+                message.getUser().setUsername(user.getUsername());
+            }
+
+            notifyItemChanged(i);
+        }
     }
     public void clear () {
         this.messages.clear();
@@ -40,15 +52,13 @@ public class ChatViewAdapter extends RecyclerView.Adapter<ChatViewHolder> {
 
     @Override
     public void onBindViewHolder(@NonNull ChatViewHolder holder, int position) {
-        // if position is out of bounds
-//        if (position < 0 || position >= this.getItemCount())
-//            return;
-
         Message message = this.messages.get(position);
 
-        holder.usernameTextView.setText(message.getUsername());
+        holder.usernameTextView.setText(message.getUser().getUsername());
         holder.contentTextView.setText(message.getMessage());
         holder.dateTextView.setText(message.getDate().toString());
+
+        holder.user = message.getUser();
 
         // Handle click events for likeButton, etc.
     }

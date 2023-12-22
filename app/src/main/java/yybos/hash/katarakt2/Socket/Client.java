@@ -156,6 +156,7 @@ public class Client {
 
                     if (packetObject.getType() == PacketObject.Type.Message) {
                         Message message = Message.fromString(rawMessage.toString());
+                        message.setUser(this.user);
 
                         this.notifyMessageToListeners(message, true);
                     }
@@ -176,8 +177,8 @@ public class Client {
                         Command command = Command.fromString(rawMessage.toString());
 
                         switch (command.getCommand()) {
-                            case "setUsername": {
-                                this.mainActivity.setLoginUsername(command.getE());
+                            case "askUsername": {
+                                this.mainActivity.getChatFragmentInstance().displayInputPopup();
 
                                 break;
                             }

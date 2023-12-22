@@ -1,4 +1,4 @@
-package yybos.hash.katarakt2.Fragments.Adapters;
+package yybos.hash.katarakt2.Fragments.ViewAdapters;
 
 import static androidx.recyclerview.widget.RecyclerView.NO_POSITION;
 
@@ -14,16 +14,19 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.List;
 
+import yybos.hash.katarakt2.Fragments.Custom.CustomToggleFragment;
 import yybos.hash.katarakt2.Fragments.LoginFragment;
-import yybos.hash.katarakt2.Fragments.ViewHolders.SettingsViewHolder;
+import yybos.hash.katarakt2.Fragments.ViewHolders.LoginViewHolder;
 import yybos.hash.katarakt2.R;
 import yybos.hash.katarakt2.Socket.Objects.Server;
 
-public class SettingsViewAdapter extends RecyclerView.Adapter<SettingsViewHolder> {
+public class LoginViewAdapter extends RecyclerView.Adapter<LoginViewHolder> {
     private final List<Server> servers = new ArrayList<>();
+    private final List<LoginViewHolder> holders = new ArrayList<>();
+
     private final LoginFragment loginFragmentInstance;
 
-    public SettingsViewAdapter (LoginFragment fragment) {
+    public LoginViewAdapter(LoginFragment fragment) {
         this.loginFragmentInstance = fragment;
     }
 
@@ -31,7 +34,7 @@ public class SettingsViewAdapter extends RecyclerView.Adapter<SettingsViewHolder
         this.servers.add(server);
         notifyItemChanged(this.servers.size() - 1);
     }
-    public void updateServer(SettingsViewHolder serverViewHolder) {
+    public void updateServer(LoginViewHolder serverViewHolder) {
         int position = serverViewHolder.getAdapterPosition();
         if (position == NO_POSITION) {
             this.addServer(serverViewHolder.serverInfo);
@@ -50,15 +53,16 @@ public class SettingsViewAdapter extends RecyclerView.Adapter<SettingsViewHolder
 
     @NonNull
     @Override
-    public SettingsViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public LoginViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.layout_server, parent, false);
-        return new SettingsViewHolder(itemView);
+        return new LoginViewHolder(itemView);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull SettingsViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull LoginViewHolder holder, int position) {
         Server server = this.servers.get(position);
 
+        this.holders.add(holder);
         holder.setInfo(server);
 
         // Dynamically add CustomToggleFragment to the FragmentContainerView
@@ -74,6 +78,17 @@ public class SettingsViewAdapter extends RecyclerView.Adapter<SettingsViewHolder
             this.loginFragmentInstance.tryConnection(server);
         });
         holder.fragmentContainer.setOnClickListener((v) -> {
+            // disabled any other active toggles
+            if (!holder.toggleInstance.getState()) {
+                for (LoginViewHolder viewHolder : this.holders) {
+                    CustomToggleFragment toggleInstance = viewHolder.toggleInstance;
+
+                    if (toggleInstance.getState()) {
+                        toggleInstance.makeFalse();
+                    }
+                }
+            }
+
             holder.toggleInstance.toggle();
         });
     }

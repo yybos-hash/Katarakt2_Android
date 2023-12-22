@@ -1,4 +1,4 @@
-package yybos.hash.katarakt2.Fragments;
+package yybos.hash.katarakt2.Fragments.Custom;
 
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
@@ -14,7 +14,6 @@ import androidx.fragment.app.Fragment;
 
 import org.jetbrains.annotations.Nullable;
 
-import yybos.hash.katarakt2.FunnySounds;
 import yybos.hash.katarakt2.R;
 
 public class CustomToggleFragment extends Fragment {
@@ -49,7 +48,7 @@ public class CustomToggleFragment extends Fragment {
         this.circle.setId(View.generateViewId());
     }
 
-    private void makeTrue () {
+    public void makeTrue () {
         this.isTrue = true;
 
         Drawable shape = this.createRoundedRectangleDrawable(getResources().getColor(R.color.toggleEnabledColor, requireActivity().getTheme()));
@@ -59,10 +58,10 @@ public class CustomToggleFragment extends Fragment {
         circleParams.gravity = Gravity.CENTER_VERTICAL | Gravity.END;
         this.circle.setLayoutParams(circleParams);
 
-        FunnySounds funny = new FunnySounds();
-        funny.playSound(requireContext(), R.raw.rage);
+//        FunnySounds funny = new FunnySounds();
+//        funny.playSound(requireContext(), R.raw.rage);
     }
-    private void makeFalse () {
+    public void makeFalse () {
         this.isTrue = false;
 
         Drawable shape = this.createRoundedRectangleDrawable(getResources().getColor(R.color.toggleColor, requireActivity().getTheme()));

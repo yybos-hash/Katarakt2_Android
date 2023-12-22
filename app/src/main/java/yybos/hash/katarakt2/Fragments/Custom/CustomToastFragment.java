@@ -1,4 +1,4 @@
-package yybos.hash.katarakt2.Fragments;
+package yybos.hash.katarakt2.Fragments.Custom;
 
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
@@ -61,6 +61,8 @@ public class CustomToastFragment extends Fragment {
 
         background.setBackground(this.createRoundedRectangleDrawable(this.backgroundColor.toArgb()));
         this.toast.setText(this.message);
+
+        new Handler(Looper.getMainLooper()).postDelayed(() -> this.toast.setVisibility(View.VISIBLE), 150);
 
         // end toast after set time
         new Handler(Looper.getMainLooper()).postDelayed(this::end, 4000);

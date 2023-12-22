@@ -6,4 +6,7 @@
 
     <dimen name="toggle_circle_size">20dp</dimen>
     <dimen name="toggle_corner">15dp</dimen>
+
+    <dimen name="settings_fragment_margin">50dp</dimen>
+    <dimen name="settings_fragment_size">275dp</dimen>
 </resources>

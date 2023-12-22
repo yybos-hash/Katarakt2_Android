@@ -57,6 +57,13 @@ public class Command extends PacketObject {
 
         return from;
     }
+    public static Command createChat (String newChat) {
+        Command from = new Command();
+        from.type = Type.Command;
+        from.e = newChat;
+
+        return from;
+    }
 
     public static Command toCommand (String command) {
         Command from = new Command();
