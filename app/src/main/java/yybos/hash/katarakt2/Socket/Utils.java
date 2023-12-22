@@ -1,13 +1,16 @@
 package yybos.hash.katarakt2.Socket;
 
 import com.google.gson.Gson;
-
-import yybos.hash.katarakt2.Socket.Objects.Message;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSerializer;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.sql.Date;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
 
 public class Utils {
     public Socket client;
@@ -27,17 +30,26 @@ public class Utils {
         }
     }
 
-    public void sendMessage (Message message) {
-        if (message == null)
+    public void sendObject(Object obj) {
+        if (obj == null)
             return;
 
-        Gson messageParser = new Gson();
-        String text = messageParser.toJson(message) + '\0';
+        //
+        SimpleDateFormat customDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
+
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        gsonBuilder.registerTypeAdapter(Date.class, (JsonSerializer<Date>) (src, typeOfSrc, context) -> context.serialize(customDateFormat.format(src)));
+        //  Basically when gson formats a Date in the sql.Date format it changes the format, so this keeps the it as it should
+
+        Gson objParser = gsonBuilder.create();
+
+        String text = objParser.toJson(obj) + '\0';
 
         try {
             send(text);
         }
         catch (Exception e) {
+            e.printStackTrace();
             System.out.println(e.getMessage());
             System.out.println("Returning");
         }
@@ -47,7 +59,7 @@ public class Utils {
             return;
 
         try {
-            send(message);
+            send(message.replace("\0", ""));
         }
         catch (Exception e) {
             System.out.println(e.getMessage());
@@ -67,16 +79,15 @@ public class Utils {
 
     public void close () {
         try {
+            in.close();
+            out.close();
+
             client.close();
             client.shutdownOutput();
             client.shutdownInput();
-
-            in.close();
-            out.close();
         }
         catch (Exception e) {
             System.out.println(e.getMessage());
-            System.out.println("Returning");
         }
     }
 }

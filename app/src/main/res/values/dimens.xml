@@ -3,4 +3,10 @@
     <dimen name="chat_edittext_height">40dp</dimen>
     <dimen name="chat_edittext_width">280dp</dimen>
     <dimen name="chat_edittext_width_expanded">320dp</dimen>
+
+    <dimen name="toggle_circle_size">20dp</dimen>
+    <dimen name="toggle_corner">15dp</dimen>
+
+    <dimen name="settings_fragment_margin">50dp</dimen>
+    <dimen name="settings_fragment_size">275dp</dimen>
 </resources>

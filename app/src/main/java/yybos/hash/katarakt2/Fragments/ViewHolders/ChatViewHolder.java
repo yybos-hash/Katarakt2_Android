@@ -7,12 +7,15 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import yybos.hash.katarakt2.R;
+import yybos.hash.katarakt2.Socket.Objects.User;
 
 public class ChatViewHolder extends RecyclerView.ViewHolder {
     public TextView usernameTextView;
     public TextView contentTextView;
     public TextView dateTextView;
     // public ImageView profileImageView;
+
+    public User user;
 
     public ChatViewHolder(@NonNull View itemView) {
         super(itemView);
