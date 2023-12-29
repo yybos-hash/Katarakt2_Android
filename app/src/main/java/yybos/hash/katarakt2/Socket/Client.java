@@ -19,6 +19,7 @@ import yybos.hash.katarakt2.Socket.Objects.Command;
 import yybos.hash.katarakt2.Socket.Objects.Login;
 import yybos.hash.katarakt2.Socket.Objects.Message;
 import yybos.hash.katarakt2.Socket.Objects.PacketObject;
+import yybos.hash.katarakt2.Socket.Objects.Server;
 import yybos.hash.katarakt2.Socket.Objects.User;
 
 public class Client {
@@ -32,6 +33,8 @@ public class Client {
 
     private Utils messageUtils;
     private final MainActivity mainActivity;
+
+    private  String clientIp;
 
     public User user;
 
@@ -47,18 +50,21 @@ public class Client {
         return this.isConnecting;
     }
 
-    public void tryConnection () {
-        if (this.isConnected || this.isConnecting)
+    public void tryConnection (Server server) {
+        if (this.isConnecting)
             return;
 
-        if (this.mainActivity.getLoginEmail().equals(" ") || this.mainActivity.getLoginPassword().equals(" "))
+        if (this.isConnected)
+            this.close();
+
+        if (server.email.equals(" ") || server.password.equals(" "))
             return;
 
-        this.ipAddress = this.mainActivity.getIpAddress();
-        this.port = this.mainActivity.getPort();
+        this.ipAddress = server.serverIp;
+        this.port = server.serverPort;
 
-        this.user.setEmail(this.mainActivity.getLoginEmail());
-        this.user.setPassword(this.mainActivity.getLoginPassword());
+        this.user.setEmail(server.email);
+        this.user.setPassword(server.password);
 
         Thread t1 = new Thread(this::connect);
         t1.start();
@@ -78,7 +84,7 @@ public class Client {
             // connect the clients
 
             if (!managerSocket.isConnected()) {
-                this.notifyMessageToListeners(Message.toMessage("Failed to connect to the server", "Katarakt"), false);
+                this.notifyMessageToListeners(Message.toMessage("Failed to connect to the server", User.toUser(0, "Socket")), false);
                 return;
             }
 
@@ -99,8 +105,6 @@ public class Client {
         this.messageUtils = messageUtils;
 
         try {
-            this.user.setUsername("Redmi");
-
             // send alllejdnaejkdklad
             messageUtils.sendObject(Login.toLogin(Constants.version, Constants.messagePort, this.user.getEmail(), this.user.getPassword()));
 
@@ -156,7 +160,7 @@ public class Client {
 
                     if (packetObject.getType() == PacketObject.Type.Message) {
                         Message message = Message.fromString(rawMessage.toString());
-                        message.setUser(this.user);
+                        message.setUser(message.getUser());
 
                         this.notifyMessageToListeners(message, true);
                     }
@@ -172,13 +176,19 @@ public class Client {
 
                         // yeah, the login info
                         this.user = user;
+                        this.mainActivity.setLoginUsername(user.getUsername());
                     }
                     else if (packetObject.getType() == PacketObject.Type.Command) {
                         Command command = Command.fromString(rawMessage.toString());
 
                         switch (command.getCommand()) {
                             case "askUsername": {
-                                this.mainActivity.getChatFragmentInstance().displayInputPopup();
+                                this.mainActivity.getChatFragmentInstance().displayUsernameInputPopup();
+
+                                break;
+                            }
+                            case "errorToast": {
+                                this.mainActivity.showCustomToast(command.getF(), Color.argb(90, 235, 64, 52));
 
                                 break;
                             }
@@ -192,10 +202,15 @@ public class Client {
                 System.out.println("Exception in client: " + client.getInetAddress().toString());
                 System.out.println(e.getMessage());
 
+                this.user.setUsername("");
+                this.mainActivity.setLoginUsername("");
+                this.mainActivity.currentChatId = 0;
+
                 this.mainActivity.showCustomToast("Disconnected", Color.argb(90, 235, 64, 52));
+                this.mainActivity.getChatFragmentInstance().clearChat();
 
                 // just tell the user that the connection was closed
-                Message conMessage = Message.toMessage("Connection abruptly interrupted by the server", "Socket");
+                Message conMessage = Message.toMessage("Connection abruptly interrupted by the server", User.toUser(0, "Socket"));
                 this.notifyMessageToListeners(conMessage, false);
 
                 this.isConnected = false;
@@ -211,6 +226,14 @@ public class Client {
     }
     private void handleMedia (Socket client) {
 
+    }
+
+    private void close () {
+        messageUtils.close();
+    }
+
+    public String getClientIp () {
+        return this.messageUtils.client.getInetAddress().getHostAddress();
     }
 
     // methods to send objects
@@ -243,13 +266,13 @@ public class Client {
     }
 
     public void getChatHistory (int chatId) {
+        this.mainActivity.getChatFragmentInstance().clearChat();
         this.sendPacketObject(Command.getChatHistory(chatId));
     }
     public void getChats () {
-        this.mainActivity.getChatsHistory().clear();
         this.sendPacketObject(Command.getChats());
     }
-    public void setUsername (String username) {
+    public void updateUsername (String username) {
         this.sendPacketObject(Command.setUsername(username));
     }
 

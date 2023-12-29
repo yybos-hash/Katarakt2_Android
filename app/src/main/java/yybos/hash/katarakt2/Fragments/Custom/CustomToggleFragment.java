@@ -14,9 +14,11 @@ import androidx.fragment.app.Fragment;
 
 import org.jetbrains.annotations.Nullable;
 
+import yybos.hash.katarakt2.Fragments.Custom.Listeners.ToggleListener;
 import yybos.hash.katarakt2.R;
 
 public class CustomToggleFragment extends Fragment {
+    private ToggleListener listener;
     private boolean isTrue = false;
 
     private View circle;
@@ -77,10 +79,13 @@ public class CustomToggleFragment extends Fragment {
             this.makeFalse();
         else
             this.makeTrue();
+
+        if (this.listener != null)
+            this.listener.onValueChanged(this.getState());
     }
     public boolean getState () {
         // do not send a reference
-        return Boolean.valueOf(this.isTrue);
+        return this.isTrue;
     }
 
     private Drawable createRoundedRectangleDrawable(int color) {

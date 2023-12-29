@@ -9,4 +9,6 @@
 
     <dimen name="settings_fragment_margin">50dp</dimen>
     <dimen name="settings_fragment_size">275dp</dimen>
+
+    <dimen name="options_width">150dp</dimen>
 </resources>

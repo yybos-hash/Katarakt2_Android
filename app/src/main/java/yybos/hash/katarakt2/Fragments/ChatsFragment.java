@@ -1,5 +1,8 @@
 package yybos.hash.katarakt2.Fragments;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ValueAnimator;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -14,6 +17,7 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 
 import androidx.annotation.NonNull;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -21,24 +25,30 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
-
 import yybos.hash.katarakt2.Fragments.Popup.InputPopupFragment;
 import yybos.hash.katarakt2.Fragments.ViewAdapters.ChatsViewAdapter;
 import yybos.hash.katarakt2.MainActivity;
 import yybos.hash.katarakt2.R;
+import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
 import yybos.hash.katarakt2.Socket.Objects.Chat;
+import yybos.hash.katarakt2.Socket.Objects.Message;
 
-public class ChatsFragment extends Fragment {
+public class ChatsFragment extends Fragment implements ClientInterface {
     private MainActivity mainActivityInstance;
-    private ChatsViewAdapter chatsAdapter;
-    private LinearLayout linearLayout;
-    private ImageView addButton;
-    private FrameLayout generalFrameLayout;
+    private ChatFragment chatFragmentInstance;
 
-    private InputPopupFragment inputPopupFragment;
+    private ChatsViewAdapter chatsAdapter;
+    private LinearLayout innerLinearLayout;
+    private ConstraintLayout constraintLayout;
 
     private ProgressBar progressBar;
+
+    public ChatsFragment () {
+
+    }
+    public ChatsFragment (ChatFragment instance) {
+        this.chatFragmentInstance = instance;
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -58,14 +68,14 @@ public class ChatsFragment extends Fragment {
             return;
 
         this.mainActivityInstance = ((MainActivity) requireActivity());
+        this.mainActivityInstance.addClientListener(this);
 
-        this.addButton = root.findViewById(R.id.chatsAdd);
+        ImageView addButton = root.findViewById(R.id.chatsAdd);
         this.progressBar = root.findViewById(R.id.chatsProgressBar);
-        this.linearLayout = root.findViewById(R.id.chatsLinearLayout);
+        this.innerLinearLayout = root.findViewById(R.id.chatsInnerLinearLayout);
+        this.constraintLayout = root.findViewById(R.id.chatsConstraintLayout);
 
-        List<Chat> chatsHistory = this.mainActivityInstance.getChatsHistory();
-
-        this.chatsAdapter = new ChatsViewAdapter(chatsHistory, ((MainActivity) requireActivity()).getChatFragmentInstance());
+        this.chatsAdapter = new ChatsViewAdapter(chatFragmentInstance);
 
         RecyclerView recyclerView = root.findViewById(R.id.chatsRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -73,88 +83,138 @@ public class ChatsFragment extends Fragment {
         recyclerView.setOverScrollMode(View.OVER_SCROLL_NEVER);
 
         ImageView closeButton = root.findViewById(R.id.chatsClose);
-        closeButton.setOnClickListener(this::closeButton);
+        closeButton.setOnClickListener((v) -> {
+            this.destroy();
+        });
 
-        this.addButton.setOnClickListener((v) -> ChatsFragment.this.addNewChat());
+        addButton.setOnClickListener((v) -> {
+            if (this.mainActivityInstance.getClient().isConnected())
+                ChatsFragment.this.addNewChat();
+            else
+                ChatsFragment.this.mainActivityInstance.showCustomToast("No.", Color.argb(90, 235, 64, 52));
+        });
 
         // set everything to invisible so the chats_list_expand animation doesnt glitch the layout
-        recyclerView.setVisibility(View.INVISIBLE);
+        this.innerLinearLayout.setVisibility(View.INVISIBLE);
 
         // make things visible again after the animation ends
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            recyclerView.setVisibility(View.VISIBLE);
+            ChatsFragment.this.innerLinearLayout.setVisibility(View.VISIBLE);
         }, 300);
 
-        if (!this.mainActivityInstance.getClient().isConnected() || !chatsHistory.isEmpty())
+        if (!this.mainActivityInstance.getClient().isConnected())
             this.progressBar.setVisibility(View.INVISIBLE);
-    }
 
-    private void closeButton (View view) {
-        this.destroy();
+        this.chatFragmentInstance.getChats();
     }
 
     private void addNewChat () {
         if (this.getContext() == null)
             return;
 
+        String resultKey = "chatsNewChat" + System.currentTimeMillis();
+
         // create frame layout for popup fragment
-        this.generalFrameLayout = new FrameLayout(this.getContext());
-        this.generalFrameLayout.setId(View.generateViewId());
-        this.generalFrameLayout.setOnClickListener(view -> this.closeInputPopup());
-        this.generalFrameLayout.setBackgroundColor(Color.argb(100, 0, 0, 0));
+        FrameLayout generalFrameLayout = new FrameLayout(this.getContext());
+        generalFrameLayout.setId(View.generateViewId());
+        generalFrameLayout.setOnClickListener(view -> {
+            ValueAnimator frameFadeOut = ValueAnimator.ofInt(100, 0);
+            frameFadeOut.setDuration(200);
+            frameFadeOut.addUpdateListener((animator) -> {
+                int value = (int) animator.getAnimatedValue();
+                generalFrameLayout.setBackgroundColor(Color.argb(value, 0, 0, 0));
+            });
+            frameFadeOut.start();
+
+            InputPopupFragment inputPopupFragment = (InputPopupFragment) getParentFragmentManager().findFragmentByTag(resultKey);
+
+            if (inputPopupFragment == null)
+                return;
+
+            inputPopupFragment.destroy();
+        });
+
+        ValueAnimator frameFadeIn = ValueAnimator.ofInt(0, 100);
+        frameFadeIn.setDuration(200);
+        frameFadeIn.addUpdateListener((animator) -> {
+            int value = (int) animator.getAnimatedValue();
+            generalFrameLayout.setBackgroundColor(Color.argb(value, 0, 0, 0));
+        });
+        frameFadeIn.start();
 
         FrameLayout.LayoutParams fragmentFrameLayout = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         fragmentFrameLayout.gravity = Gravity.CENTER;
 
-        this.inputPopupFragment = new InputPopupFragment();
+        InputPopupFragment inputPopupFragment = new InputPopupFragment();
 
         Bundle args = new Bundle();
-        args.putString("resultKey", "chatsNewChat");
+        args.putString("title", "BOOBS");
+        args.putString("text", "May you please insert the chat name?");
+        args.putString("hint", "Right Here");
+        args.putString("resultKey", resultKey);
 
-        this.inputPopupFragment.setArguments(args);
+        inputPopupFragment.setArguments(args);
 
         // initiate fragment manager and
         FragmentTransaction fragmentManager = getParentFragmentManager().beginTransaction();
-
         fragmentManager.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out, R.anim.fragment_fade_in, R.anim.fragment_fade_out);
-        fragmentManager.add(this.generalFrameLayout.getId(), this.inputPopupFragment);
+        fragmentManager.add(generalFrameLayout.getId(), inputPopupFragment, resultKey);
         fragmentManager.commit();
 
-        getParentFragmentManager().setFragmentResultListener("chatsNewChat", this.inputPopupFragment, (requestKey, result) -> {
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (requestKey, result) -> {
             String data = result.getString("inputResult");
 
-            Chat newChat = Chat.toChat(0, data);
+            ChatsFragment.this.closeInputPopup(resultKey);
 
-            ChatsFragment.this.addChat(newChat);
+            if (data == null || data.trim().isEmpty())
+                return;
+
+            ChatsFragment.this.chatFragmentInstance.createChat(data);
         });
 
         // add frame layout to constraintLayout
-        this.linearLayout.addView(this.generalFrameLayout, fragmentFrameLayout);
-    }
-    private void closeInputPopup () {
-        this.removeGeneralFrameLayout();
+        this.constraintLayout.addView(generalFrameLayout, fragmentFrameLayout);
     }
 
-    private void removeGeneralFrameLayout() {
-        this.generalFrameLayout.removeAllViews();
-        this.linearLayout.removeView(this.generalFrameLayout);
+    public void closeInputPopup (String tag) {
+        InputPopupFragment inputPopupFragment = (InputPopupFragment) getParentFragmentManager().findFragmentByTag(tag);
+
+        if (inputPopupFragment == null)
+            return;
+
+        View inputPopupView = inputPopupFragment.getView();
+        if (inputPopupView == null)
+            return;
+
+        // remove the frameLayout (parent) from the constraintLayout (xuxu beleza)
+        FrameLayout generalFrameLayout = (FrameLayout) inputPopupView.getParent();
+
+        ValueAnimator frameFadeOut = ValueAnimator.ofInt(100, 0);
+        frameFadeOut.setDuration(150);
+        frameFadeOut.addUpdateListener((animator) -> {
+            int value = (int) animator.getAnimatedValue();
+            generalFrameLayout.setBackgroundColor(Color.argb(value, 0, 0, 0));
+        });
+        frameFadeOut.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                generalFrameLayout.removeAllViews();
+                ChatsFragment.this.constraintLayout.removeView(generalFrameLayout);
+
+                super.onAnimationEnd(animation);
+            }
+        });
+        frameFadeOut.start();
     }
 
-    public void addChat (Chat chat) {
+    private void addChat (Chat chat) {
         // if it's inside the main thread
-        if (Looper.myLooper() == Looper.getMainLooper()) {
-            this.chatsAdapter.addChat(chat);
-            this.progressBar.setVisibility(View.INVISIBLE);
-        }
-        else {
-            // Call a function on the UI thread
-            mainActivityInstance.runOnUiThread(() -> {
-                ChatsFragment.this.chatsAdapter.addChat(chat);
-                ChatsFragment.this.progressBar.setVisibility(View.INVISIBLE);
-            });
-        }
+        this.chatsAdapter.addChat(chat);
+        this.progressBar.setVisibility(View.INVISIBLE);
     }
     public void destroy () {
+        this.innerLinearLayout.removeAllViews();
+
         FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
         transaction.setCustomAnimations(R.anim.chats_list_expand, R.anim.chats_list_contract);
         transaction.remove(this);
@@ -162,9 +222,30 @@ public class ChatsFragment extends Fragment {
     }
 
     @Override
+    public void onMessageReceived(Message message) {
+        // chatsFragment doesnt have anything to do with messages
+    }
+
+    @Override
+    public void onChatReceived(Chat chat) {
+        // if it's inside the main thread
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            this.addChat(chat);
+        }
+        else {
+            // Call a function on the UI thread
+            mainActivityInstance.runOnUiThread(() -> {
+                this.addChat(chat);
+            });
+        }
+    }
+
+    @Override
     public void onDestroyView () {
-        this.linearLayout.removeAllViews();
-        this.mainActivityInstance.getChatFragmentInstance().removeGeneralFrameLayout();
+        this.mainActivityInstance.removeClientListener(this);
+
+        // doesnt need an actual result, just something to notify the destruction to the chatFragment
+        getParentFragmentManager().setFragmentResult("chatsFragment", new Bundle());
 
         super.onDestroyView();
     }

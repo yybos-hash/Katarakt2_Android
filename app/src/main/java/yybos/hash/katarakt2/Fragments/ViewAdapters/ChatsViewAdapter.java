@@ -1,30 +1,35 @@
 package yybos.hash.katarakt2.Fragments.ViewAdapters;
 
+import android.content.Context;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.content.res.ResourcesCompat;
+import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import yybos.hash.katarakt2.Fragments.ChatFragment;
+import yybos.hash.katarakt2.Fragments.Popup.OptionFragment;
 import yybos.hash.katarakt2.Fragments.ViewHolders.ChatsViewHolder;
 import yybos.hash.katarakt2.R;
 import yybos.hash.katarakt2.Socket.Objects.Chat;
 
 public class ChatsViewAdapter extends RecyclerView.Adapter<ChatsViewHolder> {
-    private List<Chat> chats = new ArrayList<>();
+    private final List<Chat> chats = new ArrayList<>();
     private ChatFragment chatFragmentInstance;
 
-    public ChatsViewAdapter (List<Chat> history, ChatFragment chatFragment) {
+    public ChatsViewAdapter (ChatFragment chatFragment) {
         if (chatFragment != null)
             this.chatFragmentInstance = chatFragment;
-
-        if (history != null)
-            this.chats = history;
     }
 
     public void addChat (Chat chat) {
@@ -43,17 +48,123 @@ public class ChatsViewAdapter extends RecyclerView.Adapter<ChatsViewHolder> {
     public void onBindViewHolder(@NonNull ChatsViewHolder holder, int position) {
         Chat chat = this.chats.get(position);
 
-        if (chat.getName() != null)
+        Context context = this.chatFragmentInstance.requireContext();
+
+        if (chat.getName() != null) {
             holder.nameTextView.setText(chat.getName());
+
+            if (chat.getId() == this.chatFragmentInstance.getCurrentChatId()) {
+                holder.setChatSelected(context, true);
+            }
+        }
 
         if (chat.getDate() != null)
             holder.dateTextView.setText(chat.getDate().toString());
 
         holder.constraintLayout.setOnClickListener(v -> {
+            this.chatFragmentInstance.showCustomToast("Loading " + chat.getName(), Color.argb(80, 0, 153, 255));
             this.chatFragmentInstance.updateMessageHistory(chat.getId());
-            this.chatFragmentInstance.closeChatsList();
+            this.chatFragmentInstance.closeChats();
         });
-        // Handle click events for likeButton, etc.
+        holder.constraintLayout.setOnLongClickListener(v -> {
+            holder.setOptionSelected(true);
+
+            int holderX = holder.getScreenPosition().centerX();
+            int holderY = holder.getScreenPosition().centerY();
+
+            FrameLayout generalFrameLayout = this.chatFragmentInstance.createFrameLayout();
+            generalFrameLayout.setOnClickListener(view -> {
+                holder.setOptionSelected(false);
+
+                ConstraintLayout parent = (ConstraintLayout) generalFrameLayout.getParent();
+                generalFrameLayout.removeAllViews();
+                parent.removeView(generalFrameLayout);
+            });
+
+            LinearLayout optionsLinearLayout = new LinearLayout(context);
+            optionsLinearLayout.setOrientation(LinearLayout.VERTICAL);
+
+            // delete option
+            FrameLayout deleteOption = new FrameLayout(context);
+            OptionFragment deleteOptionFragment = new OptionFragment("Delete", ResourcesCompat.getDrawable(context.getResources(), R.drawable.trash_icon, context.getTheme())); // jesus fucking christ
+
+            deleteOption.setId(View.generateViewId());
+
+            ((FragmentActivity) context).getSupportFragmentManager().beginTransaction()
+                    .add(deleteOption.getId(), deleteOptionFragment)
+                    .commit();
+
+            deleteOption.setOnClickListener((shit) -> {
+                this.chatFragmentInstance.displayInfo(
+                "Wait!",
+                "Do you really want to delete " + chat.getName() + " and all of it's messages?",
+                "Yes",
+                "Missclick",
+                (resultKey, result) -> {
+                    int button = result.getInt("button");
+
+                    if (button == 1) {
+                        this.chatFragmentInstance.deleteChat(chat.getId());
+
+                        // If I use this.chats.remove(index) a lot of things will go wrong
+                        for (int i = 0; i < this.chats.size(); i++) {
+                            if (this.chats.get(i).getId() == chat.getId()) {
+                                this.chats.remove(i);
+                                notifyItemRemoved(i);
+                            }
+                        }
+                    }
+
+                    // the resultKey is the same as the fragment tag
+                    this.chatFragmentInstance.closeInfoPopup(resultKey);
+                });
+                holder.setOptionSelected(false);
+
+                ConstraintLayout parent = (ConstraintLayout) generalFrameLayout.getParent();
+                generalFrameLayout.removeAllViews();
+                parent.removeView(generalFrameLayout);
+            });
+            //
+
+            // edit option
+            FrameLayout editOption = new FrameLayout(context);
+            OptionFragment editOptionFragment = new OptionFragment("Edit", ResourcesCompat.getDrawable(context.getResources(), R.drawable.edit_icon, context.getTheme())); // jesus fucking christ
+
+            editOption.setId(View.generateViewId());
+
+            ((FragmentActivity) context).getSupportFragmentManager().beginTransaction()
+                    .add(editOption.getId(), editOptionFragment)
+                    .commit();
+
+            editOption.setOnClickListener((secondShit) -> {
+                ConstraintLayout parent = (ConstraintLayout) generalFrameLayout.getParent();
+                generalFrameLayout.removeAllViews();
+                parent.removeView(generalFrameLayout);
+            });
+            //
+
+            // it's here because of the rKey
+
+
+            // set sum things
+            optionsLinearLayout.setBackground(ResourcesCompat.getDrawable(context.getResources(), R.drawable.options_shape, context.getTheme()));
+            optionsLinearLayout.setPadding(10, 10, 10, 10);
+
+            FrameLayout.LayoutParams optionsLinearLayoutParams = new FrameLayout.LayoutParams(
+                    (int) context.getResources().getDimension(R.dimen.options_width), ViewGroup.LayoutParams.WRAP_CONTENT
+            );
+            optionsLinearLayoutParams.leftMargin = holderX - 250;
+            optionsLinearLayoutParams.topMargin = holderY - 50;
+            //
+
+            // now add everything to the screen
+            optionsLinearLayout.addView(editOption);
+            optionsLinearLayout.addView(deleteOption);
+
+            generalFrameLayout.addView(optionsLinearLayout, optionsLinearLayoutParams);
+
+            return true;
+        });
     }
 
     @Override

@@ -30,13 +30,24 @@ public class PacketObject {
         return this.date;
     }
 
+    public void setId (int id) {
+        this.id = id;
+    }
+    public void setType (int type) {
+        this.type = Type.getEnumByValue(type);
+    }
+    public void setDate (Date date) {
+        this.date = date;
+    }
+
     public enum Type {
         Message(0),
         Command(1),
         Version(2),
         User(3),
         Login(4),
-        Chat(5);
+        FileRequest(5),
+        Chat(6);
 
         private final int value;
 
@@ -47,8 +58,8 @@ public class PacketObject {
         public int getValue () {
             return value;
         }
-        public static yybos.hash.katarakt2.Socket.Objects.Message.Type getEnumByValue (int value) {
-            for (yybos.hash.katarakt2.Socket.Objects.Message.Type enumValue : yybos.hash.katarakt2.Socket.Objects.Message.Type.values()) {
+        public static Type getEnumByValue (int value) {
+            for (Type enumValue : Type.values()) {
                 if (enumValue.getValue() == value) {
                     return enumValue;
                 }

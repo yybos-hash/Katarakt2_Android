@@ -22,7 +22,6 @@ import yybos.hash.katarakt2.Fragments.LoginFragment;
 import yybos.hash.katarakt2.Fragments.SettingsFragment;
 import yybos.hash.katarakt2.Socket.Client;
 import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
-import yybos.hash.katarakt2.Socket.Objects.Chat;
 import yybos.hash.katarakt2.Socket.Objects.Message;
 
 public class MainActivity extends AppCompatActivity {
@@ -35,14 +34,6 @@ public class MainActivity extends AppCompatActivity {
 
     private Client client;
     private List<Message> messageHistory;
-    private List<Chat> chatsHistory;
-    // chats history will hold chats while the chatsFragment is null (So basically while the chatsFragment is not displayed, it holds the chats and then adds them to the adapter)
-
-    private String ipAddress;
-    private int port;
-
-    private String loginEmail;
-    private String loginPassword;
     private String loginUsername;
 
     private ChatFragment chatFragmentInstance;
@@ -60,6 +51,8 @@ public class MainActivity extends AppCompatActivity {
         if (actionBar != null)
             actionBar.hide();
 
+        this.loginUsername = "";
+
         this.selectionTab = findViewById(R.id.activitySelectionTab);
 
         this.buttonChat = findViewById(R.id.activityButtonChat);
@@ -72,16 +65,11 @@ public class MainActivity extends AppCompatActivity {
         this.buttonSettings.setOnClickListener(this::tabPressed);
         this.buttonLogin.setOnClickListener(this::tabPressed);
 
-        this.loginEmail = " ";
-        this.loginPassword = " ";
-        this.loginUsername = " ";
-        // just to initialize it
+        this.buttonLogin.performClick();
 
         this.messageHistory = new ArrayList<>();
-        this.chatsHistory = new ArrayList<>();
 
         this.client = new Client(this);
-        this.client.tryConnection();
     }
 
     private void tabPressed (View view) {
@@ -130,46 +118,17 @@ public class MainActivity extends AppCompatActivity {
 
     // login and client
 
-    public void setLoginEmail(String email) {
-        this.loginEmail = email.replace("\0", "");
-    }
-    public void setLoginPassword (String password) {
-        this.loginPassword = password.replace("\0", "");
-    }
     public void setLoginUsername(String loginUsername) {
         this.loginUsername = loginUsername.replace("\0", "");
-    }
-    public void setIpAddress(String ipAddress) {
-        this.ipAddress = ipAddress;
-    }
-    public void setPort(int port) {
-        this.port = port;
-    }
-
-    public String getLoginEmail () {
-        return this.loginEmail;
-    }
-    public String getLoginPassword () {
-        return this.loginPassword;
     }
     public String getLoginUsername() {
         return this.loginUsername;
     }
-    public String getIpAddress() {
-        return this.ipAddress;
-    }
-    public int getPort() {
-        return this.port;
-    }
-
 
     // histories
 
     public List<Message> getMessageHistory() {
         return this.messageHistory;
-    }
-    public List<Chat> getChatsHistory () {
-        return this.chatsHistory;
     }
 
     // client
@@ -178,10 +137,10 @@ public class MainActivity extends AppCompatActivity {
         return this.client;
     }
 
-    public void addListener (ClientInterface clientInterface) {
+    public void addClientListener(ClientInterface clientInterface) {
         this.client.addEventListener(clientInterface);
     }
-    public void removeListener (ClientInterface clientInterface) {
+    public void removeClientListener(ClientInterface clientInterface) {
         this.client.removeEventListener(clientInterface);
     }
 
@@ -190,11 +149,11 @@ public class MainActivity extends AppCompatActivity {
     public ChatFragment getChatFragmentInstance () {
         return this.chatFragmentInstance;
     }
-    public LoginFragment getSettingsFragmentInstance () {
+    public LoginFragment getLoginFragmentInstance() {
         return this.loginFragmentInstance;
     }
 
-    public void showCustomToast (String message, int backgroundColor) {
+    public synchronized void showCustomToast (String message, int backgroundColor) {
         Bundle args = new Bundle();
         args.putString("message", message);
         args.putInt("background", backgroundColor);
@@ -211,14 +170,11 @@ public class MainActivity extends AppCompatActivity {
         // Set custom animations for entering and exiting the fragment
         fragmentTransaction.setCustomAnimations(R.anim.custom_toast_expand, R.anim.custom_toast_contract);
 
-        // Call a function on the UI thread
-        this.runOnUiThread(() -> {
-            // Replace the existing fragment with the new one
-            fragmentTransaction.replace(R.id.customToastFragmentView, this.customToastInstance);
+        // Replace the existing fragment with the new one
+        fragmentTransaction.replace(R.id.customToastFragmentView, this.customToastInstance);
 
-            // Use a Handler to post the transaction on the main thread
-            // Commit the transaction
-            new Handler(Looper.getMainLooper()).post(fragmentTransaction::commitNow);
-        });
+        // Use a Handler to post the transaction on the main thread
+        // Commit the transaction
+        new Handler(Looper.getMainLooper()).post(fragmentTransaction::commitNow);
     }
 }

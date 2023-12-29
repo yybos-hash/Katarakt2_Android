@@ -13,42 +13,90 @@ import androidx.annotation.NonNull;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.annotations.Expose;
 
 import java.sql.Date;
 
 public class Message extends PacketObject {
-    private User user;
+    private User user = new User();
 
+    public Message () {
+        super.setType(PacketObject.Type.Message.getValue());
+    }
+
+    public User getUser() {
+        return this.user;
+    }
+    public void setUser (User user)  {
+        this.user = user;
+    }
+
+    public int getId () {
+        return this.id;
+    }
     public String getMessage () {
         return this.e;
     }
     public int getChat () {
         return this.a;
     }
-    public User getUser () {
-        return this.user;
+    public String getUsername () {
+        return this.user.getUsername();
+    }
+    public int getUserId () {
+        return this.user.getId();
+    }
+    public Date getDate () {
+        return this.date;
     }
 
-    public void setUser (User user) {
-        this.user = user;
+    public void setMessage (String message) {
+        this.e = message;
+    }
+    public void setChat (int id) {
+        this.a = id;
+    }
+    public void setUsername (String username) {
+        this.user.setUsername(username);
+    }
+    public void setUserId (int id) {
+        this.user.setId(id);
     }
 
-    public static Message toMessage (String message, int chat, String username, User user) {
+    public static Message toMessage (String message, int chat, String username, int userId) {
         Message from = new Message();
-        from.type = Type.Message;
         from.e = message;
         from.a = chat;
-        from.f = username;
-        from.user = user;
+        from.user.setUsername(username);
+        from.user.setId(userId);
         from.date = new Date(System.currentTimeMillis());
 
         return from;
     }
     public static Message toMessage (String message, String username) {
         Message from = new Message();
-        from.type = Type.Message;
         from.e = message;
-        from.f = username;
+        from.a = 0;
+        from.user.setUsername(username);
+        from.b = 0;
+        from.date = new Date(System.currentTimeMillis());
+
+        return from;
+    }
+    public static Message toMessage (String message, int chat, User user) {
+        Message from = new Message();
+        from.e = message;
+        from.a = chat;
+        from.user = user;
+        from.date = new Date(System.currentTimeMillis());
+
+        return from;
+    }
+    public static Message toMessage (String message, User user) {
+        Message from = new Message();
+        from.e = message;
+        from.a = 0;
+        from.user = user;
         from.date = new Date(System.currentTimeMillis());
 
         return from;

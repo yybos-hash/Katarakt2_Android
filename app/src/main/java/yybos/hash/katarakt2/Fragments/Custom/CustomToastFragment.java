@@ -65,7 +65,7 @@ public class CustomToastFragment extends Fragment {
         new Handler(Looper.getMainLooper()).postDelayed(() -> this.toast.setVisibility(View.VISIBLE), 150);
 
         // end toast after set time
-        new Handler(Looper.getMainLooper()).postDelayed(this::end, 4000);
+        new Handler(Looper.getMainLooper()).postDelayed(this::end, 2500);
     }
 
     private void end () {
@@ -85,9 +85,11 @@ public class CustomToastFragment extends Fragment {
 
                 @Override
                 public void onAnimationEnd(Animation animation) {
+                    if (CustomToastFragment.this.isDetached())
+                        return;
+
                     // Animation ended, remove the fragment
                     FragmentManager fragmentManager = getParentFragmentManager();
-                    // transaction.setCustomAnimations(R.anim.custom_toast_expand, R.anim.custom_toast_contract);
                     FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
                     fragmentTransaction.remove(CustomToastFragment.this);
                     fragmentTransaction.commit();

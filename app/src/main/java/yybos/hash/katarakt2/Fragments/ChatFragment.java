@@ -1,5 +1,8 @@
 package yybos.hash.katarakt2.Fragments;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ValueAnimator;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Looper;
@@ -14,6 +17,7 @@ import android.widget.ImageView;
 import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentResultListener;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -23,27 +27,22 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 import yybos.hash.katarakt2.Fragments.Popup.InputPopupFragment;
-import yybos.hash.katarakt2.Fragments.Popup.PopupErrorFragment;
+import yybos.hash.katarakt2.Fragments.Popup.InfoPopupFragment;
 import yybos.hash.katarakt2.Fragments.ViewAdapters.ChatViewAdapter;
 import yybos.hash.katarakt2.MainActivity;
 import yybos.hash.katarakt2.R;
 import yybos.hash.katarakt2.Socket.Client;
 import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
 import yybos.hash.katarakt2.Socket.Objects.Chat;
+import yybos.hash.katarakt2.Socket.Objects.Command;
 import yybos.hash.katarakt2.Socket.Objects.Message;
 import yybos.hash.katarakt2.Socket.Objects.User;
 
 public class ChatFragment extends Fragment implements ClientInterface {
     private ConstraintLayout constraintLayout;
 
-    private FrameLayout generalFrameLayout; // used for displaying things on the screen
-
     private EditText editText;
     private RecyclerView recyclerView;
-
-    private ChatsFragment chatsFragment;
-    private PopupErrorFragment popupErrorFragment;
-    private InputPopupFragment inputPopupFragment;
 
     private ChatViewAdapter chatAdapter;
     private List<Message> history;
@@ -86,7 +85,7 @@ public class ChatFragment extends Fragment implements ClientInterface {
         this.history = this.mainActivityInstance.getMessageHistory();
 
         // listen to incoming messages
-        this.mainActivityInstance.addListener(this);
+        this.mainActivityInstance.addClientListener(this);
 
 
 
@@ -108,7 +107,13 @@ public class ChatFragment extends Fragment implements ClientInterface {
             if (focused) {
                 if (ChatFragment.this.client == null || !ChatFragment.this.client.isConnected()) {
                     v.clearFocus();
-                    this.displayErrorMessage("Hold Up!", "You not connected = you not send message", "Alright, smart boy", "Bet");
+                    this.displayInfo(
+                        "Hold Up!",
+                        "You not connected = you not send message",
+                        "Alright, smart boy",
+                        "Bet",
+                        (resultkey, result) -> ChatFragment.this.closeInfoPopup(resultkey)
+                    );
                     return;
                 }
 
@@ -128,11 +133,27 @@ public class ChatFragment extends Fragment implements ClientInterface {
         if (this.chatAdapter.getItemCount() > 0)
             this.scrollToLastMessage();
 
-        if (!this.client.isConnected())
-             this.displayErrorMessage("Oh Noes!", "It looks like you are not connected. CONNECT, BITCH", "Ok :(", "Shut the fuck up");
+        if (!this.client.isConnected()) {
+            this.displayInfo(
+                "The App",
+                "It shows here that you are not connected to a server",
+                "I will connect",
+                "Red pilled message box",
+                (resultKey, result) -> {
+                    int button = result.getInt("button");
 
-        if (this.mainActivityInstance.getLoginUsername().trim().isEmpty() && this.client.isConnected())
-            this.displayInputPopup();
+                    if (button == 0) {
+                        ChatFragment.this.mainActivityInstance.showCustomToast("Fuck you", Color.argb(90, 235, 64, 52));
+                    }
+
+                    ChatFragment.this.closeInfoPopup(resultKey);
+                }
+            );
+        }
+
+        if (this.mainActivityInstance.getLoginUsername().trim().isEmpty() && this.client.isConnected()) {
+            this.displayUsernameInputPopup();
+        }
     }
 
     // send message through client
@@ -151,7 +172,7 @@ public class ChatFragment extends Fragment implements ClientInterface {
 
         this.editText.setText("");
 
-        Message message = Message.toMessage(content, this.mainActivityInstance.currentChatId, this.client.user.getUsername(), this.client.user);
+        Message message = Message.toMessage(content, this.mainActivityInstance.currentChatId, this.client.user);
 
         this.client.sendMessage(message);
         this.chatAdapter.addMessage(message);
@@ -161,147 +182,285 @@ public class ChatFragment extends Fragment implements ClientInterface {
     }
 
     // display things
+    public void showCustomToast (String message, int backgroundColor) {
+        if (this.client.isConnected())
+            this.mainActivityInstance.showCustomToast(message, backgroundColor);
+        else
+            this.mainActivityInstance.showCustomToast("My brother, you ain't even connected", Color.argb(80, 245, 66, 66));
+    }
+
+    public FrameLayout createFrameLayout () {
+        FrameLayout generalFrameLayout = new FrameLayout(this.requireContext());
+        generalFrameLayout.setId(View.generateViewId());
+
+        FrameLayout.LayoutParams fragmentFrameLayoutParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        fragmentFrameLayoutParams.gravity = Gravity.END;
+
+        this.constraintLayout.addView(generalFrameLayout, fragmentFrameLayoutParams);
+
+        return generalFrameLayout;
+    }
     private void displayChatsList (View v) {
-        this.client.getChats();
-        // get chats
-
         // create frame layout for popup fragment
-        this.generalFrameLayout = new FrameLayout(this.requireContext());
-        this.generalFrameLayout.setId(View.generateViewId());
-        this.generalFrameLayout.setOnClickListener(view -> this.closeChatsList());
-        this.generalFrameLayout.setBackgroundColor(Color.argb(100, 0, 0, 0));
+        FrameLayout generalFrameLayout = this.createFrameLayout();
+        generalFrameLayout.setOnClickListener(view -> {
+            // this will trigger the resultListener by calling the destroy method in the chatsFragment
+            ChatFragment.this.closeChats();
+        });
 
-        FrameLayout.LayoutParams fragmentFrameLayout = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-        fragmentFrameLayout.gravity = Gravity.END;
+        ValueAnimator frameFadeIn = ValueAnimator.ofInt(0, 100);
+        frameFadeIn.setDuration(200);
+        frameFadeIn.addUpdateListener((animator) -> {
+            int value = (int) animator.getAnimatedValue();
+            generalFrameLayout.setBackgroundColor(Color.argb(value, 0, 0, 0));
+        });
+        frameFadeIn.start();
 
         // add fragment to frame layout
-        this.chatsFragment = new ChatsFragment();
+        ChatsFragment chatsFragment = new ChatsFragment(this);
 
         // initiate fragment manager
         FragmentTransaction fragmentManager = getParentFragmentManager().beginTransaction();
 
         fragmentManager.setCustomAnimations(R.anim.chats_list_expand, R.anim.chats_list_contract);
-        fragmentManager.addToBackStack(null);
-        fragmentManager.add(this.generalFrameLayout.getId(), this.chatsFragment);
+        fragmentManager.add(generalFrameLayout.getId(), chatsFragment, "chatsFragmentInstance");
         fragmentManager.commit();
 
-        // add frame layout to constraintLayout
-        this.constraintLayout.addView(this.generalFrameLayout, fragmentFrameLayout);
+        getParentFragmentManager().setFragmentResultListener("chatsFragment", this, (resultKey, result) -> {
+            ValueAnimator frameFadeOut = ValueAnimator.ofInt(100, 0);
+            frameFadeOut.setDuration(200);
+            frameFadeOut.addUpdateListener((animator) -> {
+                int value = (int) animator.getAnimatedValue();
+                generalFrameLayout.setBackgroundColor(Color.argb(value, 0, 0, 0));
+            });
+            frameFadeOut.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    super.onAnimationEnd(animation);
+
+                    generalFrameLayout.removeAllViews();
+                    ChatFragment.this.constraintLayout.removeView(generalFrameLayout);
+                }
+            });
+            frameFadeOut.start();
+        });
+
+        // frame layout is already added to the screen
     }
-    public void displayErrorMessage (String title, String description, String firstButtonText, String secondButtonText) {
+    public void displayInfo (String title, String description, String firstButtonText, String secondButtonText, FragmentResultListener listener) {
+        String resultKey = "displayInfo" + System.currentTimeMillis();
+
         // create frame layout for popup fragment
-        this.generalFrameLayout = new FrameLayout(this.requireContext());
-        this.generalFrameLayout.setId(View.generateViewId());
-        this.generalFrameLayout.setOnClickListener(view -> this.closeErrorMessage());
-        this.generalFrameLayout.setBackgroundColor(Color.argb(100, 0, 0, 0));
+        FrameLayout generalFrameLayout = this.createFrameLayout();
+        generalFrameLayout.setOnClickListener(view -> {
+            ValueAnimator frameFadeOut = ValueAnimator.ofInt(100, 0);
+            frameFadeOut.setDuration(200);
+            frameFadeOut.addUpdateListener((animator) -> {
+                int value = (int) animator.getAnimatedValue();
+                generalFrameLayout.setBackgroundColor(Color.argb(value, 0, 0, 0));
+            });
+            frameFadeOut.start();
 
-        FrameLayout.LayoutParams fragmentFrameLayout = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-        fragmentFrameLayout.gravity = Gravity.CENTER;
+            InfoPopupFragment infoPopupFragment = (InfoPopupFragment) getParentFragmentManager().findFragmentByTag(resultKey);
 
-        // add fragment to frame layout
+            if (infoPopupFragment == null)
+                return;
+
+            infoPopupFragment.destroy();
+        });
+
+        generalFrameLayout.setZ(this.constraintLayout.getChildCount() + 15);
+        ValueAnimator frameFadeIn = ValueAnimator.ofInt(0, 100);
+        frameFadeIn.setDuration(200);
+        frameFadeIn.addUpdateListener((animator) -> {
+            int value = (int) animator.getAnimatedValue();
+            generalFrameLayout.setBackgroundColor(Color.argb(value, 0, 0, 0));
+        });
+        frameFadeIn.start();
+
         // set args for title, description, etc
+        InfoPopupFragment infoPopupFragment = new InfoPopupFragment();
+
         Bundle args = new Bundle();
         args.putString("title", title);
         args.putString("description", description);
         args.putString("firstButtonText", firstButtonText);
         args.putString("secondButtonText", secondButtonText);
+        args.putString("resultKey", resultKey);
 
-        this.popupErrorFragment = new PopupErrorFragment();
-        this.popupErrorFragment.setArguments(args);
+        infoPopupFragment.setArguments(args);
 
         // initiate fragment manager and
         FragmentTransaction fragmentManager = getParentFragmentManager().beginTransaction();
 
         fragmentManager.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out, R.anim.fragment_fade_in, R.anim.fragment_fade_out);
-        fragmentManager.add(this.generalFrameLayout.getId(), this.popupErrorFragment);
+        fragmentManager.add(generalFrameLayout.getId(), infoPopupFragment, resultKey);
         fragmentManager.commit();
 
-        // add frame layout to constraintLayout
-        this.constraintLayout.addView(this.generalFrameLayout, fragmentFrameLayout);
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, listener);
+
+        // frame layout is already added to the screen
     }
-    public void displayInputPopup () {
+
+    public void displayUsernameInputPopup () {
         if (this.getContext() == null)
             return;
 
+        String resultKey = "displayInput" + System.currentTimeMillis();
+
         // create frame layout for popup fragment
-        this.generalFrameLayout = new FrameLayout(this.getContext());
-        this.generalFrameLayout.setId(View.generateViewId());
-        this.generalFrameLayout.setOnClickListener(view -> this.closeInputPopup());
-        this.generalFrameLayout.setBackgroundColor(Color.argb(100, 0, 0, 0));
+        FrameLayout generalFrameLayout = this.createFrameLayout();
+        generalFrameLayout.setOnClickListener(view -> {
+            ValueAnimator frameFadeOut = ValueAnimator.ofInt(100, 0);
+            frameFadeOut.setDuration(150);
+            frameFadeOut.addUpdateListener((animator) -> {
+                int value = (int) animator.getAnimatedValue();
+                generalFrameLayout.setBackgroundColor(Color.argb(value, 0, 0, 0));
+            });
+            frameFadeOut.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    super.onAnimationEnd(animation);
 
-        FrameLayout.LayoutParams fragmentFrameLayout = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-        fragmentFrameLayout.gravity = Gravity.CENTER;
+                    InputPopupFragment inputPopupFragment = (InputPopupFragment) getParentFragmentManager().findFragmentByTag(resultKey);
 
-        this.inputPopupFragment = new InputPopupFragment();
+                    if (inputPopupFragment == null)
+                        return;
+
+                    inputPopupFragment.destroy();
+                }
+            });
+            frameFadeOut.start();
+
+            String data = ChatFragment.this.client.getClientIp();
+
+            User newUser = User.toUser(ChatFragment.this.mainActivityInstance.getClient().user.getId(), data, null, null);
+
+            ChatFragment.this.mainActivityInstance.setLoginUsername(data);
+            ChatFragment.this.chatAdapter.updateUsername(newUser);
+        });
+
+        ValueAnimator frameFadeIn = ValueAnimator.ofInt(0, 100);
+        frameFadeIn.setDuration(200);
+        frameFadeIn.addUpdateListener((animator) -> {
+            int value = (int) animator.getAnimatedValue();
+            generalFrameLayout.setBackgroundColor(Color.argb(value, 0, 0, 0));
+        });
+        frameFadeIn.start();
+
+        InputPopupFragment inputPopupFragment = new InputPopupFragment();
 
         Bundle args = new Bundle();
-        args.putString("resultKey", "chatNewUsername");
+        args.putString("title", "Greetings!");
+        args.putString("text", "The server is gently asking for an username");
+        args.putString("hint", "Username");
+        args.putString("resultKey", resultKey);
 
-        this.inputPopupFragment.setArguments(args);
+        inputPopupFragment.setArguments(args);
 
         // initiate fragment manager
         FragmentTransaction fragmentManager = getParentFragmentManager().beginTransaction();
 
         fragmentManager.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out, R.anim.fragment_fade_in, R.anim.fragment_fade_out);
-        fragmentManager.add(this.generalFrameLayout.getId(), this.inputPopupFragment);
+        fragmentManager.add(generalFrameLayout.getId(), inputPopupFragment, resultKey);
         fragmentManager.commit();
 
-        getParentFragmentManager().setFragmentResultListener("chatNewUsername", this.inputPopupFragment, (requestKey, result) -> {
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (requestKey, result) -> {
             String data = result.getString("inputResult");
+
+            ChatFragment.this.closeInputPopup(resultKey);
 
             if (data == null)
                 return;
 
+            if (data.trim().isEmpty())
+                data = ChatFragment.this.client.getClientIp();
+            else
+                ChatFragment.this.mainActivityInstance.getClient().updateUsername(data);
+
             User newUser = User.toUser(ChatFragment.this.mainActivityInstance.getClient().user.getId(), data, null, null);
 
             ChatFragment.this.mainActivityInstance.setLoginUsername(data);
-            ChatFragment.this.mainActivityInstance.getClient().setUsername(data);
-
             ChatFragment.this.chatAdapter.updateUsername(newUser);
         });
 
-        // add frame layout to constraintLayout
-        this.constraintLayout.addView(this.generalFrameLayout, fragmentFrameLayout);
+        // frame layout is already added to the screen
     }
 
-    public void closeInputPopup () {
-        if (this.inputPopupFragment == null)
+    public void closeChats() {
+        ChatsFragment chatsFragment = (ChatsFragment) getParentFragmentManager().findFragmentByTag("chatsFragmentInstance");
+
+        if (chatsFragment == null)
             return;
 
-        FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
-        transaction.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out);
-        transaction.remove(this.inputPopupFragment);
-        transaction.commit();
-
-        this.removeGeneralFrameLayout();
+        chatsFragment.destroy();
     }
-    public void closeErrorMessage () {
-        if (this.popupErrorFragment == null)
+    public void closeInfoPopup (String tag) {
+        InfoPopupFragment infoPopupFragment = (InfoPopupFragment) getParentFragmentManager().findFragmentByTag(tag);
+
+        if (infoPopupFragment == null)
             return;
 
-        FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
-        transaction.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out);
-        transaction.remove(this.popupErrorFragment);
-        transaction.commit();
-
-        this.removeGeneralFrameLayout();
-    }
-    public void closeChatsList () {
-        if (this.chatsFragment == null)
+        View infoPopupView = infoPopupFragment.getView();
+        if (infoPopupView == null)
             return;
 
-        this.chatsFragment.destroy();
+        // remove the frameLayout (parent) from the constraintLayout (xuxu beleza)
+        FrameLayout generalFrameLayout = (FrameLayout) infoPopupView.getParent();
+
+        ValueAnimator frameFadeOut = ValueAnimator.ofInt(100, 0);
+        frameFadeOut.setDuration(150);
+        frameFadeOut.addUpdateListener((animator) -> {
+            int value = (int) animator.getAnimatedValue();
+            generalFrameLayout.setBackgroundColor(Color.argb(value, 0, 0, 0));
+        });
+        frameFadeOut.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                generalFrameLayout.removeAllViews();
+                ChatFragment.this.constraintLayout.removeView(generalFrameLayout);
+
+                super.onAnimationEnd(animation);
+            }
+        });
+        frameFadeOut.start();
+
     }
-    public void removeGeneralFrameLayout() {
-        this.generalFrameLayout.removeAllViews();
-        this.constraintLayout.removeView(this.generalFrameLayout);
+    public void closeInputPopup (String tag) {
+        InputPopupFragment inputPopupFragment = (InputPopupFragment) getParentFragmentManager().findFragmentByTag(tag);
+
+        if (inputPopupFragment == null)
+            return;
+
+        View inputPopupView = inputPopupFragment.getView();
+        if (inputPopupView == null)
+            return;
+
+        // remove the frameLayout (parent) from the constraintLayout (xuxu beleza)
+        FrameLayout generalFrameLayout = (FrameLayout) inputPopupView.getParent();
+
+        ValueAnimator frameFadeOut = ValueAnimator.ofInt(100, 0);
+        frameFadeOut.setDuration(150);
+        frameFadeOut.addUpdateListener((animator) -> {
+            int value = (int) animator.getAnimatedValue();
+            generalFrameLayout.setBackgroundColor(Color.argb(value, 0, 0, 0));
+        });
+        frameFadeOut.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                generalFrameLayout.removeAllViews();
+                ChatFragment.this.constraintLayout.removeView(generalFrameLayout);
+
+                super.onAnimationEnd(animation);
+            }
+        });
+        frameFadeOut.start();
     }
 
-    // remove listener once the fragment is destroyed
     @Override
     public void onDestroyView () {
-        // remove listener
-        this.mainActivityInstance.removeListener(this);
+        // remove listener once the fragment is destroyed
+        this.mainActivityInstance.removeClientListener(this);
 
         super.onDestroyView();
     }
@@ -324,19 +483,22 @@ public class ChatFragment extends Fragment implements ClientInterface {
     }
     @Override
     public void onChatReceived(Chat chat) {
-        if (this.chatsFragment == null || !this.chatsFragment.isVisible()) {
-            this.mainActivityInstance.getChatsHistory().add(chat);
-            return;
-        }
+        // chatFragment doesnt have anything to do with chats
+    }
 
+    // shits
+
+    public void clearChat () {
         // if it's inside the main thread
         if (Looper.myLooper() == Looper.getMainLooper()) {
-            this.chatsFragment.addChat(chat);
+            this.chatAdapter.clear();
+            this.history.clear();
         }
         else {
             // Call a function on the UI thread
             mainActivityInstance.runOnUiThread(() -> {
-                this.chatsFragment.addChat(chat);
+                this.chatAdapter.clear();
+                this.history.clear();
             });
         }
     }
@@ -350,11 +512,24 @@ public class ChatFragment extends Fragment implements ClientInterface {
             return;
 
         this.chatAdapter.clear();
-        this.chatAdapter.notifyDataSetChanged();
-        // no other way, must use notifyDataSetChanged()
 
         this.history.clear();
         this.client.getChatHistory(chatId);
         this.mainActivityInstance.currentChatId = chatId;
     }
+
+    public void getChats () {
+        this.client.getChats();
+    }
+    public void createChat (String name) {
+        this.client.sendCommand(Command.createChat(name));
+    }
+    public void deleteChat(int id) {
+        this.client.sendCommand(Command.deleteChat(id));
+    }
+
+    public int getCurrentChatId() {
+        return this.mainActivityInstance.currentChatId;
+    }
+
 }

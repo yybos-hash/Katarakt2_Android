@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import yybos.hash.katarakt2.Fragments.Custom.CustomSpinnerFragment;
+import yybos.hash.katarakt2.Fragments.Custom.Listeners.SpinnerListener;
 import yybos.hash.katarakt2.MainActivity;
 import yybos.hash.katarakt2.R;
 import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
@@ -29,6 +30,7 @@ public class ChatSetting extends Fragment implements ClientInterface {
     private MainActivity mainActivityInstance;
 
     private FragmentContainerView spinnerContainer;
+    private SpinnerListener spinnerListener;
 
     public ChatSetting () {
 
@@ -42,7 +44,7 @@ public class ChatSetting extends Fragment implements ClientInterface {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         this.mainActivityInstance = ((MainActivity) requireActivity());
-        this.mainActivityInstance.addListener(this);
+        this.mainActivityInstance.addClientListener(this);
 
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.setting_chat, container, false);
@@ -56,6 +58,9 @@ public class ChatSetting extends Fragment implements ClientInterface {
         this.spinnerContainer.setId(View.generateViewId());
 
         CustomSpinnerFragment customSpinner = new CustomSpinnerFragment(this.chats);
+        customSpinner.setOptionListener(option -> {
+
+        });
 
         ((FragmentActivity) requireContext()).getSupportFragmentManager().beginTransaction()
                 .add(this.spinnerContainer.getId(), customSpinner)
@@ -68,7 +73,7 @@ public class ChatSetting extends Fragment implements ClientInterface {
 
     @Override
     public void onDestroyView () {
-        this.mainActivityInstance.removeListener(this);
+        this.mainActivityInstance.removeClientListener(this);
 
         super.onDestroyView();
     }

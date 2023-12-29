@@ -6,7 +6,8 @@ import java.nio.charset.StandardCharsets;
 public class Constants {
     public static final String version = "1.0.0";
 
-    public static final String server = "192.168.0.111";
+    // this is not used anymore. It's only here because yes
+    public static final String server = "10.0.2.2";
     public static final int managerPort = 5135;
     public static final int messagePort = managerPort + 1;
     public static final int mediaPort = managerPort + 2;

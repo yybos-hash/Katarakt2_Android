@@ -41,6 +41,8 @@ public class ChatViewAdapter extends RecyclerView.Adapter<ChatViewHolder> {
     }
     public void clear () {
         this.messages.clear();
+        notifyDataSetChanged();
+        // no other way, must use notifyDataSetChanged()
     }
 
     @NonNull
@@ -54,7 +56,7 @@ public class ChatViewAdapter extends RecyclerView.Adapter<ChatViewHolder> {
     public void onBindViewHolder(@NonNull ChatViewHolder holder, int position) {
         Message message = this.messages.get(position);
 
-        holder.usernameTextView.setText(message.getUser().getUsername());
+        holder.usernameTextView.setText(message.getUsername());
         holder.contentTextView.setText(message.getMessage());
         holder.dateTextView.setText(message.getDate().toString());
 

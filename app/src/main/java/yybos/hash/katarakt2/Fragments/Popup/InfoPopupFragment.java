@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -17,8 +18,11 @@ import yybos.hash.katarakt2.Fragments.ChatFragment;
 import yybos.hash.katarakt2.MainActivity;
 import yybos.hash.katarakt2.R;
 
-public class PopupErrorFragment extends Fragment {
-    public PopupErrorFragment() {
+public class InfoPopupFragment extends Fragment {
+    private String resultKey = "";
+    private int result = -1;
+
+    public InfoPopupFragment() {
         // Required empty public constructor
     }
 
@@ -35,9 +39,7 @@ public class PopupErrorFragment extends Fragment {
 
     @Override
     public void onViewCreated (@NonNull View view, @Nullable Bundle savedInstanceState) {
-        View root = getView();
-        if (root == null)
-            return;
+        View root = view.getRootView();
 
         // views
         TextView titleTextView = root.findViewById(R.id.popupErrorTitle);
@@ -45,10 +47,6 @@ public class PopupErrorFragment extends Fragment {
 
         Button firstButton = root.findViewById(R.id.popupErrorFirstButton);
         Button secondButton = root.findViewById(R.id.popupErrorSecondButton);
-
-        // set buttons listener
-        firstButton.setOnClickListener(this::buttonAction);
-        secondButton.setOnClickListener(this::buttonAction);
 
         if (getArguments() != null) {
             Bundle args = this.getArguments();
@@ -60,31 +58,40 @@ public class PopupErrorFragment extends Fragment {
             String firstButtonText = args.getString("firstButtonText");
             String secondButtonText = args.getString("secondButtonText");
 
+            this.resultKey = args.getString("resultKey");
+
             // change view's text
             titleTextView.setText(title);
             descriptionTextView.setText(description);
 
             firstButton.setText(firstButtonText);
             secondButton.setText(secondButtonText);
+
+            // set buttons listener
+            firstButton.setOnClickListener((v) -> {
+                this.result = 1;
+                InfoPopupFragment.this.destroy();
+            });
+            secondButton.setOnClickListener((v) -> {
+                this.result = 0;
+                InfoPopupFragment.this.destroy();
+            });
         }
     }
 
     @Override
-    public void onDestroy () {
-        ChatFragment chatFragmentInstance = ((MainActivity) requireActivity()).getChatFragmentInstance();
-
-        if (chatFragmentInstance != null)
-            chatFragmentInstance.closeErrorMessage();
-
-        super.onDestroy();
+    public void onDestroyView () {
+        super.onDestroyView();
     }
 
-    // button action
-
-    private void buttonAction (View view) {
+    public void destroy () {
         FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
         transaction.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out);
         transaction.remove(this);
         transaction.commit();
+
+        Bundle args = new Bundle();
+        args.putInt("button", this.result);
+        getParentFragmentManager().setFragmentResult(this.resultKey, args);
     }
 }

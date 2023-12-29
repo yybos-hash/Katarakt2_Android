@@ -8,6 +8,10 @@ import com.google.gson.GsonBuilder;
 import java.sql.Date;
 
 public class User extends PacketObject {
+    public User () {
+        super.setType(PacketObject.Type.User.getValue());
+    }
+
     public String getUsername () {
         return this.e;
     }
@@ -30,12 +34,22 @@ public class User extends PacketObject {
 
     public static User toUser (int id, String username, String email, String password) {
         User from = new User();
-        from.type = Type.User;
         from.id = id;
 
         from.e = username;
         from.f = email;
         from.g = password;
+
+        return from;
+    }
+    public static User toUser (int id, String username) {
+        User from = new User();
+        from.type = Type.User;
+        from.id = id;
+
+        from.e = username;
+        from.f = "";
+        from.g = "";
 
         return from;
     }

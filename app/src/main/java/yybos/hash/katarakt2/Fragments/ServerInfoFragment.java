@@ -91,7 +91,7 @@ public class ServerInfoFragment extends Fragment {
         passwordEdittext.setText(this.password);
 
         saveButton.setOnClickListener((v) -> {
-            LoginFragment loginFragmentInstance = ((MainActivity) requireActivity()).getSettingsFragmentInstance();
+            LoginFragment loginFragmentInstance = ((MainActivity) requireActivity()).getLoginFragmentInstance();
 
             // if the number was not a number
             try {

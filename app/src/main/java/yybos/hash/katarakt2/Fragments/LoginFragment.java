@@ -275,12 +275,6 @@ public class LoginFragment extends Fragment {
     }
 
     public void tryConnection(Server server) {
-        this.mainActivityInstance.setIpAddress(server.serverIp);
-        this.mainActivityInstance.setPort(server.serverPort);
-
-        this.mainActivityInstance.setLoginEmail(server.email);
-        this.mainActivityInstance.setLoginPassword(server.password);
-
-        this.mainActivityInstance.getClient().tryConnection();
+        this.mainActivityInstance.getClient().tryConnection(server);
     }
 }

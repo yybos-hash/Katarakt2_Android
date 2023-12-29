@@ -60,7 +60,16 @@ public class Command extends PacketObject {
     public static Command createChat (String newChat) {
         Command from = new Command();
         from.type = Type.Command;
-        from.e = newChat;
+        from.e = "createChat";
+        from.f = newChat;
+
+        return from;
+    }
+    public static Command deleteChat(int id) {
+        Command from = new Command();
+        from.type = Type.Command;
+        from.e = "deleteChat";
+        from.a = id;
 
         return from;
     }

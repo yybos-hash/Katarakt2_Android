@@ -52,5 +52,6 @@
     <color name="chatShapeColor">#2B364C</color>
     <color name="chatDateTextViewColor">#7A7A7A</color>
     <color name="chatNameTextViewColor">@color/textViewColor</color>
+    <color name="chatSelected">#FFFFFF</color>
 
 </resources>
