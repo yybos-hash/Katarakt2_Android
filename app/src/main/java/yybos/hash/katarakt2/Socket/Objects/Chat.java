@@ -37,5 +37,3 @@ public class Chat extends PacketObject {
         return this.getName() != null ? this.getName() : "Error";
     }
 }
-
-

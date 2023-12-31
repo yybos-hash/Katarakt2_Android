@@ -24,8 +24,6 @@ public class LoginViewHolder extends RecyclerView.ViewHolder {
 
     public Server serverInfo;
 
-    public boolean isDefault = false;
-
     public LoginViewHolder(@NonNull View itemView) {
         super(itemView);
 

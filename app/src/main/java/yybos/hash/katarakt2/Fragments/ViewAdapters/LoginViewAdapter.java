@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
+import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -66,12 +67,15 @@ public class LoginViewAdapter extends RecyclerView.Adapter<LoginViewHolder> {
         holder.setInfo(server);
 
         // Dynamically add CustomToggleFragment to the FragmentContainerView
-        FragmentTransaction transaction = ((FragmentActivity) holder.itemView.getContext()).getSupportFragmentManager().beginTransaction();
-        transaction.replace(holder.fragmentContainer.getId(), holder.toggleInstance);
-        transaction.commit();
+        FragmentManager fragmentManager = ((FragmentActivity) this.loginFragmentInstance.requireContext()).getSupportFragmentManager();
+        if (!fragmentManager.isStateSaved()) {
+            FragmentTransaction transaction = fragmentManager.beginTransaction();
+            transaction.replace(holder.fragmentContainer.getId(), holder.toggleInstance);
+            transaction.commit();
 
-        if (server.isDefault) {
-//            holder.toggleInstance.makeTrue();
+            if (server.isDefault) {
+                holder.toggleInstance.makeTrue();
+            }
         }
 
         holder.mainLinearLayout.setOnLongClickListener((v) -> {
@@ -82,6 +86,7 @@ public class LoginViewAdapter extends RecyclerView.Adapter<LoginViewHolder> {
             this.loginFragmentInstance.tryConnection(server);
         });
         holder.fragmentContainer.setOnClickListener((v) -> {
+
             // disabled any other active toggles
             if (!holder.toggleInstance.getState()) {
                 for (LoginViewHolder viewHolder : this.holders) {

@@ -33,6 +33,7 @@ import yybos.hash.katarakt2.MainActivity;
 import yybos.hash.katarakt2.R;
 import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
 import yybos.hash.katarakt2.Socket.Objects.Chat;
+import yybos.hash.katarakt2.Socket.Objects.Command;
 import yybos.hash.katarakt2.Socket.Objects.Message;
 
 public class ChatsFragment extends Fragment implements ClientInterface {
@@ -267,6 +268,11 @@ public class ChatsFragment extends Fragment implements ClientInterface {
             }
         });
         animator.start();
+    }
+
+    @Override
+    public void onCommandReceived(Command command) {
+
     }
 
     @Override

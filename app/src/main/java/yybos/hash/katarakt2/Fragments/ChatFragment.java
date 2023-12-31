@@ -169,7 +169,7 @@ public class ChatFragment extends Fragment implements ClientInterface {
 
             Chat defaultChat = this.parseJsonString(chatJson);
 
-            if (this.client.isConnected())
+            if (this.client.isConnected() && this.mainActivityInstance.currentChatId == 0)
                 this.updateMessageHistory(defaultChat.getId());
         }).start();
     }
@@ -189,6 +189,11 @@ public class ChatFragment extends Fragment implements ClientInterface {
             return;
 
         this.editText.setText("");
+
+        if (content.equals("/terminal")) {
+            this.mainActivityInstance.openTerminal();
+            return;
+        }
 
         Message message = Message.toMessage(content, this.mainActivityInstance.currentChatId, this.client.user);
 
@@ -479,6 +484,11 @@ public class ChatFragment extends Fragment implements ClientInterface {
         super.onDestroyView();
     }
 
+    @Override
+    public void onCommandReceived(Command command) {
+
+    }
+
     // events
     @Override
     public void onMessageReceived (Message message) {
@@ -525,11 +535,14 @@ public class ChatFragment extends Fragment implements ClientInterface {
         if (chatId == this.mainActivityInstance.currentChatId && this.chatAdapter.getItemCount() > 0)
             return;
 
-        this.chatAdapter.clear();
+        // out of nowhere I got an exception that the chatAdapter.clear() method was not an ui-thread
+        this.mainActivityInstance.runOnUiThread(() -> {
+            this.chatAdapter.clear();
 
-        this.history.clear();
-        this.client.getChatHistory(chatId);
-        this.mainActivityInstance.currentChatId = chatId;
+            this.history.clear();
+            this.client.getChatHistory(chatId);
+            this.mainActivityInstance.currentChatId = chatId;
+        });
     }
 
     public void getChats () {

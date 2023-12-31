@@ -97,6 +97,11 @@ public class ChatSetting extends Fragment implements ClientInterface, SpinnerLis
         super.onDestroyView();
     }
 
+    @Override
+    public void onCommandReceived(Command command) {
+
+    }
+
     // client listener
     @Override
     public void onMessageReceived(Message message) {

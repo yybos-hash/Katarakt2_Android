@@ -46,12 +46,21 @@ public class CustomToggleFragment extends Fragment {
 
         this.frame.setId(View.generateViewId());
         this.circle.setId(View.generateViewId());
+
+        if (this.isTrue)
+            this.makeTrue();
+        else
+            this.makeFalse();
     }
 
     public void makeTrue () {
         this.isTrue = true;
 
-        Drawable shape = this.createRoundedRectangleDrawable(getResources().getColor(R.color.toggleEnabledColor, requireActivity().getTheme()));
+        if (getContext() == null) {
+            return;
+        }
+
+        Drawable shape = this.createRoundedRectangleDrawable(getResources().getColor(R.color.toggleEnabledColor, requireContext().getTheme()));
         this.frame.setBackground(shape);
 
         FrameLayout.LayoutParams circleParams = new FrameLayout.LayoutParams((int) getResources().getDimension(R.dimen.toggle_circle_size), (int) getResources().getDimension(R.dimen.toggle_circle_size));
@@ -61,7 +70,11 @@ public class CustomToggleFragment extends Fragment {
     public void makeFalse () {
         this.isTrue = false;
 
-        Drawable shape = this.createRoundedRectangleDrawable(getResources().getColor(R.color.toggleColor, requireActivity().getTheme()));
+        if (getContext() == null) {
+            return;
+        }
+
+        Drawable shape = this.createRoundedRectangleDrawable(getResources().getColor(R.color.toggleColor, requireContext().getTheme()));
         this.frame.setBackground(shape);
 
         FrameLayout.LayoutParams circleParams = new FrameLayout.LayoutParams((int) getResources().getDimension(R.dimen.toggle_circle_size), (int) getResources().getDimension(R.dimen.toggle_circle_size));

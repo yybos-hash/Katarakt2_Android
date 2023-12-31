@@ -192,6 +192,11 @@ public class Client {
 
                                 break;
                             }
+                            case "output": {
+                                this.notifyCommandToListeners(command);
+
+                                break;
+                            }
                         }
                     }
                 }
@@ -305,5 +310,9 @@ public class Client {
     private void notifyChatToListeners (Chat chat) {
         for (ClientInterface listener : this.listeners)
             listener.onChatReceived(chat);
+    }
+    private void notifyCommandToListeners (Command command) {
+        for (ClientInterface listener : this.listeners)
+            listener.onCommandReceived(command);
     }
 }

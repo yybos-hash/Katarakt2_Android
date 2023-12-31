@@ -22,4 +22,10 @@ public class FunnySounds {
             mediaPlayer = null;
         }
     }
+
+    public static void playClick (Context context) {
+        MediaPlayer mediaPlayer = MediaPlayer.create(context, R.raw.click_sound);
+        mediaPlayer.start();
+        mediaPlayer.release();
+    }
 }

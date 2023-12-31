@@ -11,6 +11,7 @@ import android.widget.FrameLayout;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ import yybos.hash.katarakt2.Fragments.ChatFragment;
 import yybos.hash.katarakt2.Fragments.Custom.CustomToastFragment;
 import yybos.hash.katarakt2.Fragments.LoginFragment;
 import yybos.hash.katarakt2.Fragments.SettingsFragment;
+import yybos.hash.katarakt2.Fragments.TerminalFragment;
 import yybos.hash.katarakt2.Socket.Client;
 import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
 import yybos.hash.katarakt2.Socket.Objects.Message;
@@ -37,7 +39,6 @@ public class MainActivity extends AppCompatActivity {
     private String loginUsername;
 
     private ChatFragment chatFragmentInstance;
-    private LoginFragment loginFragmentInstance;
     private CustomToastFragment customToastInstance;
 
     public int currentChatId;
@@ -74,19 +75,23 @@ public class MainActivity extends AppCompatActivity {
         if (view == this.selectedTab)
             return;
 
-        FragmentTransaction fragmentManager = getSupportFragmentManager().beginTransaction();
-        fragmentManager.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out, R.anim.fragment_fade_in, R.anim.fragment_fade_out);
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        if (fragmentManager.isStateSaved())
+            return;
+
+        FragmentTransaction transaction = fragmentManager.beginTransaction();
+        transaction.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out, R.anim.fragment_fade_in, R.anim.fragment_fade_out);
 
         if (view == this.buttonChat)
-            fragmentManager.replace(R.id.activityFragmentContainerView, new ChatFragment());
+            transaction.replace(R.id.activityFragmentContainerView, new ChatFragment());
 
         else if (view == this.buttonLogin)
-            fragmentManager.replace(R.id.activityFragmentContainerView, new LoginFragment());
+            transaction.replace(R.id.activityFragmentContainerView, new LoginFragment());
 
         else if (view == this.buttonSettings)
-            fragmentManager.replace(R.id.activityFragmentContainerView, new SettingsFragment());
+            transaction.replace(R.id.activityFragmentContainerView, new SettingsFragment());
 
-        fragmentManager.addToBackStack(null).commit();
+        transaction.addToBackStack(null).commit();
     }
     public void moveSelectionTab (Fragment fragment) {
         View view;
@@ -97,7 +102,6 @@ public class MainActivity extends AppCompatActivity {
         }
         else if (fragment instanceof LoginFragment) {
             view = this.buttonLogin;
-            this.loginFragmentInstance = (LoginFragment) fragment;
         }
         else if (fragment instanceof SettingsFragment) {
             view = this.buttonSettings;
@@ -112,6 +116,16 @@ public class MainActivity extends AppCompatActivity {
         ValueAnimator anim = ObjectAnimator.ofFloat(this.selectionTab.getX(), targetX);
         anim.addUpdateListener(valueAnimator -> this.selectionTab.setX((float) valueAnimator.getAnimatedValue()));
         anim.start();
+    }
+
+    public void openTerminal () {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        if (fragmentManager.isStateSaved())
+            return;
+
+        FragmentTransaction transaction = fragmentManager.beginTransaction();
+        transaction.replace(R.id.activityFragmentContainerView, new TerminalFragment());
+        transaction.commit();
     }
 
     // login and client
@@ -153,25 +167,29 @@ public class MainActivity extends AppCompatActivity {
         args.putString("message", message);
         args.putInt("background", backgroundColor);
 
-        FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        if (fragmentManager.isStateSaved())
+            return;
+
+        FragmentTransaction transaction = fragmentManager.beginTransaction();
 
         if (this.customToastInstance != null && this.customToastInstance.isAdded()) {
-            fragmentTransaction.remove(this.customToastInstance);
+            transaction.remove(this.customToastInstance);
         }
 
         this.customToastInstance = new CustomToastFragment();
         this.customToastInstance.setArguments(args);
 
         // Set custom animations for entering and exiting the fragment
-        fragmentTransaction.setCustomAnimations(R.anim.custom_toast_expand, R.anim.custom_toast_contract);
+        transaction.setCustomAnimations(R.anim.custom_toast_expand, R.anim.custom_toast_contract);
 
         // Replace the existing fragment with the new one
         if (!getSupportFragmentManager().isStateSaved()) {
-            fragmentTransaction.replace(R.id.customToastFragmentView, this.customToastInstance);
+            transaction.replace(R.id.customToastFragmentView, this.customToastInstance);
         }
 
         // Use a Handler to post the transaction on the main thread
         // Commit the transaction
-        new Handler(Looper.getMainLooper()).post(fragmentTransaction::commitNow);
+        new Handler(Looper.getMainLooper()).post(transaction::commitNow);
     }
 }

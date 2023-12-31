@@ -91,9 +91,11 @@ public class CustomToastFragment extends Fragment {
 
                     // Animation ended, remove the fragment
                     FragmentManager fragmentManager = getParentFragmentManager();
-                    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                    fragmentTransaction.remove(CustomToastFragment.this);
-                    fragmentTransaction.commit();
+                    if (!fragmentManager.isStateSaved()) {
+                        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                        fragmentTransaction.remove(CustomToastFragment.this);
+                        fragmentTransaction.commit();
+                    }
                 }
 
                 @Override
@@ -103,10 +105,11 @@ public class CustomToastFragment extends Fragment {
             });
         } else {
             FragmentManager fragmentManager = getParentFragmentManager();
-            // transaction.setCustomAnimations(R.anim.custom_toast_expand, R.anim.custom_toast_contract);
-            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-            fragmentTransaction.remove(this);
-            fragmentTransaction.commit();
+            if (!fragmentManager.isStateSaved()) {
+                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                fragmentTransaction.remove(this);
+                fragmentTransaction.commit();
+            }
         }
     }
     private Drawable createRoundedRectangleDrawable(int color) {
