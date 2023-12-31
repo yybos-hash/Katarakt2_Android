@@ -6,6 +6,7 @@ import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -112,7 +113,7 @@ public class CustomToastFragment extends Fragment {
         GradientDrawable drawable = new GradientDrawable();
         drawable.setShape(GradientDrawable.RECTANGLE);
         drawable.setColor(color);
-        drawable.setCornerRadius(15); // Set your desired corner radius
+        drawable.setCornerRadius(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12, requireContext().getResources().getDisplayMetrics())); // Set your desired corner radius
 
         return drawable;
     }

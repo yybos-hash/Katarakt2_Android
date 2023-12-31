@@ -3,6 +3,7 @@ package yybos.hash.katarakt2.Fragments;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
+import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Looper;
@@ -22,16 +23,24 @@ import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.gson.Gson;
+
 import org.jetbrains.annotations.Nullable;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.List;
 
-import yybos.hash.katarakt2.Fragments.Popup.InputPopupFragment;
 import yybos.hash.katarakt2.Fragments.Popup.InfoPopupFragment;
+import yybos.hash.katarakt2.Fragments.Popup.InputPopupFragment;
 import yybos.hash.katarakt2.Fragments.ViewAdapters.ChatViewAdapter;
 import yybos.hash.katarakt2.MainActivity;
 import yybos.hash.katarakt2.R;
 import yybos.hash.katarakt2.Socket.Client;
+import yybos.hash.katarakt2.Socket.Constants;
 import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
 import yybos.hash.katarakt2.Socket.Objects.Chat;
 import yybos.hash.katarakt2.Socket.Objects.Command;
@@ -99,9 +108,7 @@ public class ChatFragment extends Fragment implements ClientInterface {
 
         this.chatAdapter = new ChatViewAdapter(this.history);
 
-        // this.buttonClickAnimation(v);
         chatsButton.setOnClickListener(this::displayChatsList);
-        // this.buttonClickAnimation(v);
         sendButton.setOnClickListener(this::sendMessage);
         this.editText.setOnFocusChangeListener((v, focused) -> {
             if (focused) {
@@ -127,8 +134,7 @@ public class ChatFragment extends Fragment implements ClientInterface {
         this.recyclerView = root.findViewById(R.id.chatRecycler);
         this.recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         this.recyclerView.setAdapter(this.chatAdapter);
-        this.recyclerView.setOverScrollMode(View.OVER_SCROLL_NEVER);
-        // get rid of that 'wave' effect when trying to scroll beyond the limits of the linearLayout
+        this.recyclerView.setOverScrollMode(View.OVER_SCROLL_NEVER); // get rid of that 'wave' effect when trying to scroll beyond the limits of the linearLayout
 
         if (this.chatAdapter.getItemCount() > 0)
             this.scrollToLastMessage();
@@ -154,6 +160,18 @@ public class ChatFragment extends Fragment implements ClientInterface {
         if (this.mainActivityInstance.getLoginUsername().trim().isEmpty() && this.client.isConnected()) {
             this.displayUsernameInputPopup();
         }
+
+        // reads from the defaultChat file; if there is something inside, parse; updateMessageHistory using the parsed chat id
+        new Thread(() -> {
+            String chatJson = this.readFileFromInternalStorage(requireContext(), Constants.defaultChatFilename);
+            if (chatJson.isEmpty())
+                return;
+
+            Chat defaultChat = this.parseJsonString(chatJson);
+
+            if (this.client.isConnected())
+                this.updateMessageHistory(defaultChat.getId());
+        }).start();
     }
 
     // send message through client
@@ -221,8 +239,6 @@ public class ChatFragment extends Fragment implements ClientInterface {
 
         // initiate fragment manager
         FragmentTransaction fragmentManager = getParentFragmentManager().beginTransaction();
-
-        fragmentManager.setCustomAnimations(R.anim.chats_list_expand, R.anim.chats_list_contract);
         fragmentManager.add(generalFrameLayout.getId(), chatsFragment, "chatsFragmentInstance");
         fragmentManager.commit();
 
@@ -268,7 +284,6 @@ public class ChatFragment extends Fragment implements ClientInterface {
 
             infoPopupFragment.destroy();
         });
-
         generalFrameLayout.setZ(this.constraintLayout.getChildCount() + 15);
         ValueAnimator frameFadeIn = ValueAnimator.ofInt(0, 100);
         frameFadeIn.setDuration(200);
@@ -291,11 +306,10 @@ public class ChatFragment extends Fragment implements ClientInterface {
         infoPopupFragment.setArguments(args);
 
         // initiate fragment manager and
-        FragmentTransaction fragmentManager = getParentFragmentManager().beginTransaction();
-
-        fragmentManager.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out, R.anim.fragment_fade_in, R.anim.fragment_fade_out);
-        fragmentManager.add(generalFrameLayout.getId(), infoPopupFragment, resultKey);
-        fragmentManager.commit();
+        FragmentTransaction fragmentTransaction = getParentFragmentManager().beginTransaction();
+        fragmentTransaction.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out, R.anim.fragment_fade_in, R.anim.fragment_fade_out);
+        fragmentTransaction.add(generalFrameLayout.getId(), infoPopupFragment, resultKey);
+        fragmentTransaction.commit();
 
         getParentFragmentManager().setFragmentResultListener(resultKey, this, listener);
 
@@ -532,4 +546,47 @@ public class ChatFragment extends Fragment implements ClientInterface {
         return this.mainActivityInstance.currentChatId;
     }
 
+    // default chat
+    public String readFileFromInternalStorage(Context context, String fileName) {
+        StringBuilder content = new StringBuilder();
+
+        try {
+            File serversFile = new File(context.getFilesDir(), Constants.serversListFilename);
+            if (!serversFile.exists())
+                serversFile.createNewFile();
+
+            // Open the file for reading
+            FileInputStream fileInputStream = context.openFileInput(fileName);
+
+            // Wrap the FileInputStream in an InputStreamReader
+            InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream);
+
+            // Wrap the InputStreamReader in a BufferedReader
+            BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+
+            // Read each line from the file
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                content.append(line).append("\n");
+            }
+
+            // Close the streams
+            bufferedReader.close();
+            inputStreamReader.close();
+            fileInputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return content.toString();
+    }
+    public Chat parseJsonString(String jsonString) {
+        if (jsonString.isEmpty())
+            return null;
+
+        Gson gson = new Gson();
+
+        // Deserialize the JSON string into a list of Server objects
+        return gson.fromJson(jsonString, Chat.class);
+    }
 }

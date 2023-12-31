@@ -15,12 +15,16 @@ public class Server {
     public String email;
     public String password;
 
+    public boolean isDefault;
+
     public void set (Server server) {
         this.serverIp = server.serverIp;
         this.serverPort = server.serverPort;
 
         this.email = server.email;
         this.password = server.password;
+
+        this.isDefault = server.isDefault;
     }
 
     @NonNull

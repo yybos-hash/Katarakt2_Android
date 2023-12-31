@@ -16,4 +16,5 @@ public class Constants {
     public static Charset encoding = StandardCharsets.UTF_8;
 
     public static final String serversListFilename = "servers_list.json";
+    public static final String defaultChatFilename = "default_chat.json";
 }

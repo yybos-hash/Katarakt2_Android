@@ -1,10 +1,11 @@
 package yybos.hash.katarakt2.Fragments;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,6 +34,7 @@ import java.io.OutputStreamWriter;
 import java.lang.reflect.Type;
 import java.util.List;
 
+import yybos.hash.katarakt2.Fragments.Popup.ServerInfoPopupFragment;
 import yybos.hash.katarakt2.Fragments.ViewAdapters.LoginViewAdapter;
 import yybos.hash.katarakt2.Fragments.ViewHolders.LoginViewHolder;
 import yybos.hash.katarakt2.MainActivity;
@@ -43,14 +45,10 @@ import yybos.hash.katarakt2.Socket.Objects.Server;
 public class LoginFragment extends Fragment {
     private MainActivity mainActivityInstance;
 
-    private LoginViewAdapter settingsAdapter;
+    private LoginViewAdapter serverAdapter;
     private LoginViewHolder serverViewHolder;
 
-    private FrameLayout generalFrameLayout;
     private ConstraintLayout constraintLayout;
-
-    private ServerInfoFragment serverInfoFragment;
-
     private FloatingActionButton floatingButton;
 
     private List<Server> serverList;
@@ -79,11 +77,11 @@ public class LoginFragment extends Fragment {
         // move selection tab (I'm doing it from the fragment cause it will fix the issue where if I used the back stack trace the selectionTab wouldnt move)
         this.mainActivityInstance.moveSelectionTab(this);
 
-        this.settingsAdapter = new LoginViewAdapter(this);
+        this.serverAdapter = new LoginViewAdapter(this);
 
         RecyclerView recyclerView = root.findViewById(R.id.loginRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        recyclerView.setAdapter(settingsAdapter);
+        recyclerView.setAdapter(serverAdapter);
         recyclerView.setOverScrollMode(View.OVER_SCROLL_NEVER);
 
         this.constraintLayout = root.findViewById(R.id.loginConstraintLayout);
@@ -93,110 +91,190 @@ public class LoginFragment extends Fragment {
             this.createInfo();
         });
 
-        // read and place all the serverssss
-        String serversJson = this.readFileFromInternalStorage(requireContext(), Constants.serversListFilename);
-        this.serverList = this.parseJsonString(serversJson);
-        if (this.serverList != null) {
-            for (Server server : this.serverList)
-                this.addServer(server);
-        }
+        // thread to read servers
+        new Thread(() -> {
+            // read and place all the serverssss
+            String serversJson = this.readFileFromInternalStorage(requireContext(), Constants.serversListFilename);
+            this.serverList = this.parseJsonString(serversJson);
+            if (this.serverList != null) {
+                for (Server server : this.serverList)
+                    this.addServer(server);
+            }
+        }).start();
     }
 
     public void addServer (Server server) {
-        this.settingsAdapter.addServer(server);
-
-        // apply changes to serversList
-        this.writeServersToFile(getContext(), this.settingsAdapter.getServers(), Constants.serversListFilename);
+        this.mainActivityInstance.runOnUiThread(() -> {
+            this.serverAdapter.addServer(server);
+        });
     }
 
     // server infos
     public void createInfo () {
+        String resultKey = "createInfo" + System.currentTimeMillis();
+
         this.floatingButton.setEnabled(false);
 
         // create frame layout for popup fragment
-        this.generalFrameLayout = new FrameLayout(this.requireContext());
-        this.generalFrameLayout.setId(View.generateViewId());
-        this.generalFrameLayout.setOnClickListener(view -> this.closeInfo());
-        this.generalFrameLayout.setBackgroundColor(Color.argb(100, 0, 0, 0));
+        FrameLayout generalFrameLayout = new FrameLayout(this.requireContext());
+        generalFrameLayout.setId(View.generateViewId());
+        generalFrameLayout.setOnClickListener(view -> {
+            ValueAnimator frameFadeOut = ValueAnimator.ofInt(100, 0);
+            frameFadeOut.setDuration(200);
+            frameFadeOut.addUpdateListener((animator) -> {
+                int value = (int) animator.getAnimatedValue();
+                generalFrameLayout.setBackgroundColor(Color.argb(value, 0, 0, 0));
+            });
+            frameFadeOut.start();
 
-        ServerInfoFragment serverInfoFragment = new ServerInfoFragment();
-        this.serverInfoFragment = serverInfoFragment;
+            this.closeInfo(resultKey);
+        });
+        ValueAnimator frameFadeIn = ValueAnimator.ofInt(0, 100);
+        frameFadeIn.setDuration(200);
+        frameFadeIn.addUpdateListener((animator) -> {
+            int value = (int) animator.getAnimatedValue();
+            generalFrameLayout.setBackgroundColor(Color.argb(value, 0, 0, 0));
+        });
+        frameFadeIn.start();
+
+        ServerInfoPopupFragment serverInfoPopupFragment = new ServerInfoPopupFragment();
+
+        Bundle args = new Bundle();
+        args.putBoolean("isCreating", true);
+        args.putString("resultKey", resultKey);
+
+        serverInfoPopupFragment.setArguments(args);
 
         FrameLayout.LayoutParams frameLayoutParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
 
         // initiate fragment manager
         FragmentTransaction fragmentManager = getParentFragmentManager().beginTransaction();
-
         fragmentManager.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out);
-        fragmentManager.add(this.generalFrameLayout.getId(), serverInfoFragment);
+        fragmentManager.add(generalFrameLayout.getId(), serverInfoPopupFragment, resultKey);
         fragmentManager.commit();
 
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (resKey, result) -> {
+            Server server = new Server();
+            server.serverIp = result.getString("serverIp");
+            server.serverPort = result.getInt("serverPort");
+            server.email = result.getString("email");
+            server.password = result.getString("password");
+
+            this.addServer(server);
+            this.closeInfo(resKey);
+
+            // apply changes to serversList
+            this.writeServersToFile(getContext(), this.serverAdapter.getServers(), Constants.serversListFilename);
+        });
+
         // add frame layout to constraintLayout
-        this.constraintLayout.addView(this.generalFrameLayout, frameLayoutParams);
+        this.constraintLayout.addView(generalFrameLayout, frameLayoutParams);
     }
     public void openInfo (LoginViewHolder viewHolder) {
         if (viewHolder == null)
             return;
 
-        this.serverViewHolder = viewHolder;
+        String resultKey = "openInfo" + System.currentTimeMillis();
 
+        this.serverViewHolder = viewHolder;
         this.floatingButton.setEnabled(false);
 
         // create frame layout for popup fragment
-        this.generalFrameLayout = new FrameLayout(this.requireContext());
-        this.generalFrameLayout.setId(View.generateViewId());
-        this.generalFrameLayout.setOnClickListener(view -> this.closeInfo());
-        this.generalFrameLayout.setBackgroundColor(Color.argb(100, 0, 0, 0));
+        FrameLayout generalFrameLayout = new FrameLayout(this.requireContext());
+        generalFrameLayout.setId(View.generateViewId());
+        generalFrameLayout.setOnClickListener(view -> {
+            ValueAnimator frameFadeOut = ValueAnimator.ofInt(100, 0);
+            frameFadeOut.setDuration(200);
+            frameFadeOut.addUpdateListener((animator) -> {
+                int value = (int) animator.getAnimatedValue();
+                generalFrameLayout.setBackgroundColor(Color.argb(value, 0, 0, 0));
+            });
+            frameFadeOut.start();
 
-        ServerInfoFragment serverInfoFragment = new ServerInfoFragment();
-        this.serverInfoFragment = serverInfoFragment;
+            this.closeInfo(resultKey);
+        });
+        ValueAnimator frameFadeIn = ValueAnimator.ofInt(0, 100);
+        frameFadeIn.setDuration(200);
+        frameFadeIn.addUpdateListener((animator) -> {
+            int value = (int) animator.getAnimatedValue();
+            generalFrameLayout.setBackgroundColor(Color.argb(value, 0, 0, 0));
+        });
+        frameFadeIn.start();
+
+        ServerInfoPopupFragment serverInfoPopupFragment = new ServerInfoPopupFragment();
 
         Bundle args = new Bundle();
-        args.putString("serverip", viewHolder.serverInfo.serverIp);
-        args.putInt("serverport", viewHolder.serverInfo.serverPort);
+        args.putString("serverIp", viewHolder.serverInfo.serverIp);
+        args.putInt("serverPort", viewHolder.serverInfo.serverPort);
         args.putString("email", viewHolder.serverInfo.email);
         args.putString("password", viewHolder.serverInfo.password);
+        args.putString("resultKey", resultKey);
 
-        serverInfoFragment.setArguments(args);
+        serverInfoPopupFragment.setArguments(args);
 
         FrameLayout.LayoutParams frameLayoutParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-        FragmentTransaction fragmentManager = getParentFragmentManager().beginTransaction();
 
+        FragmentTransaction fragmentManager = getParentFragmentManager().beginTransaction();
         fragmentManager.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out);
-        fragmentManager.add(this.generalFrameLayout.getId(), serverInfoFragment);
+        fragmentManager.add(generalFrameLayout.getId(), serverInfoPopupFragment, resultKey);
         fragmentManager.commit();
 
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (resKey, result) -> {
+            Server server = new Server();
+            server.serverIp = result.getString("serverIp");
+            server.serverPort = result.getInt("serverPort");
+            server.email = result.getString("email");
+            server.password = result.getString("password");
+
+            this.saveInfo(viewHolder, server);
+            this.closeInfo(resKey);
+        });
+
         // add frame layout to constraintLayout
-        this.constraintLayout.addView(this.generalFrameLayout, frameLayoutParams);
+        this.constraintLayout.addView(generalFrameLayout, frameLayoutParams);
     }
-    public void saveInfo (Server server) {
-        if (this.serverViewHolder == null || server == null)
+    public void saveInfo (LoginViewHolder viewHolder, Server server) {
+        if (viewHolder == null || server == null)
             return;
 
-        this.serverViewHolder.setInfo(server);
-        this.settingsAdapter.updateServer(this.serverViewHolder);
+
+        viewHolder.setInfo(server);
+        this.serverAdapter.updateServer(viewHolder);
 
         // apply changes to serversList
-        this.writeServersToFile(getContext(), this.settingsAdapter.getServers(), Constants.serversListFilename);
+        this.writeServersToFile(getContext(), this.serverAdapter.getServers(), Constants.serversListFilename);
     }
-    public void closeInfo () {
+    public void closeInfo (String tag) {
         this.floatingButton.setEnabled(true);
 
-        if (this.serverInfoFragment == null)
+        ServerInfoPopupFragment infoPopupFragment = (ServerInfoPopupFragment) getParentFragmentManager().findFragmentByTag(tag);
+
+        if (infoPopupFragment == null)
             return;
 
-        FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
-        transaction.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out);
-        transaction.remove(this.serverInfoFragment);
-        transaction.commit();
+        View infoPopupView = infoPopupFragment.getView();
+        if (infoPopupView == null)
+            return;
 
-        // remove after the animation finishes (125ms)
-        new Handler(Looper.getMainLooper()).postDelayed(this::removeGeneralFrameLayout, 125);
-    }
+        // remove the frameLayout (parent) from the constraintLayout (xuxu beleza)
+        FrameLayout generalFrameLayout = (FrameLayout) infoPopupView.getParent();
 
-    private void removeGeneralFrameLayout() {
-        this.generalFrameLayout.removeAllViews();
-        this.constraintLayout.removeView(this.generalFrameLayout);
+        ValueAnimator frameFadeOut = ValueAnimator.ofInt(100, 0);
+        frameFadeOut.setDuration(150);
+        frameFadeOut.addUpdateListener((animator) -> {
+            int value = (int) animator.getAnimatedValue();
+            generalFrameLayout.setBackgroundColor(Color.argb(value, 0, 0, 0));
+        });
+        frameFadeOut.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                generalFrameLayout.removeAllViews();
+                LoginFragment.this.constraintLayout.removeView(generalFrameLayout);
+
+                super.onAnimationEnd(animation);
+            }
+        });
+        frameFadeOut.start();
     }
 
     // abubeblu
@@ -229,7 +307,8 @@ public class LoginFragment extends Fragment {
 
         try {
             File serversFile = new File(context.getFilesDir(), Constants.serversListFilename);
-            serversFile.createNewFile();
+            if (!serversFile.exists())
+                serversFile.createNewFile();
 
             // Open the file for reading
             FileInputStream fileInputStream = context.openFileInput(fileName);
@@ -257,6 +336,9 @@ public class LoginFragment extends Fragment {
         return content.toString();
     }
     public List<Server> parseJsonString(String jsonString) {
+        if (jsonString.isEmpty())
+            return null;
+
         Gson gson = new Gson();
 
         // Define the type of the collection you want to deserialize
@@ -268,9 +350,6 @@ public class LoginFragment extends Fragment {
 
     @Override
     public void onDestroyView () {
-        // apply changes to serversList
-        this.writeServersToFile(getContext(), this.settingsAdapter.getServers(), Constants.serversListFilename);
-
         super.onDestroyView();
     }
 

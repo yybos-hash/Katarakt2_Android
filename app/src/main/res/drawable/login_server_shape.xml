@@ -20,7 +20,7 @@
                 android:radius="8dp" />
 
             <solid
-                android:color="#A4000000"/>
+                android:color="#66000000"/>
         </shape>
     </item>
 </layer-list>

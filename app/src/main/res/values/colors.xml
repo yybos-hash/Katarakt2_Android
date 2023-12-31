@@ -1,24 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="backgroundColor">#151A25</color>
-    <color name="foregroundColor">#C2C2BA</color>
-    <color name="primaryColor">#171717</color>
-    <color name="secondaryColor">#0C111C</color>
+    <color name="backgroundColor">#000000</color>
+    <color name="foregroundColor">#EDF2F4</color>
+    <color name="primaryColor">#E6191919</color>
+    <color name="secondaryColor">#363636</color>
     <color name="absoluteBlack">#000000</color>
-    <color name="backgroundColor2">#22293A</color>
-    <color name="backgroundColor3">#2B3449</color>
-    <color name="backgroundColor4">#323C55</color>
+    <color name="backgroundColor2">#2D82B7</color>
+    <color name="backgroundColor3">#43165A85</color>
+    <color name="backgroundColor4">#40136293</color>
 
 
-    <color name="edittextColor">#1E2535</color>
-    <color name="textViewColor">#E7ECEF</color>
-    <color name="textViewColor2">#BEC0C1</color>
-    <color name="textViewColor3">#9D9E9E</color>
+    <color name="edittextHintColor">#A1A1A1</color>
+    <color name="edittextColor">#7C3C3C3C</color>
+    <color name="textViewColor">#EDF2F4</color>
+    <color name="textViewColor2">#000000</color>
+    <color name="textViewColor3">#B5B6B6</color>
 
-    <color name="buttonColor">#1E2535</color>
-    <color name="toggleColor">#1E2535</color>
-    <color name="toggleEnabledColor">#309F43</color>
-    <color name="spinnerColor">#323C55</color>
+    <color name="buttonColor">#23FFFFFF</color>
+    <color name="toggleColor">#B2000000</color>
+    <color name="toggleEnabledColor">#BFFF1967</color>
+    <color name="spinnerColor">@color/primaryColor</color>
 
     <!--  view's color  -->
 
@@ -26,32 +27,36 @@
     <color name="dateColor">#7A7A7A</color>
     <color name="messageColor">#B5B5B5</color>
 
-    <color name="activityBottomBarColor">@color/secondaryColor</color>
+    <color name="activityBottomBarColor">@color/backgroundColor</color>
 
     <color name="loginEdittextColor">@color/edittextColor</color>
     <color name="loginEdittextHintColor">#8A7E7E7E</color>
     <color name="loginTextViewColor">#C2C2BA</color>
     <color name="loginButtonTextColor">#C2C2BA</color>
-    <color name="loginButtonColor">@color/edittextColor</color>
+    <color name="loginButtonColor">#191919</color>
     <color name="loginShapeColor">#242C3E</color>
 
     <color name="chatEdittextColor">@color/edittextColor</color>
-    <color name="chatEdittextHintColor">#8A7E7E7E</color>
+    <color name="chatEdittextHintColor">@color/edittextHintColor</color>
     <color name="chatButtonsShapeColor">@color/edittextColor</color>
 
     <color name="configTextViewColor">#C2C2BA</color>
     <color name="configServerShapeColor">@color/edittextColor</color>
     <color name="configEdittextHintColor">#8A7E7E7E</color>
 
-    <color name="popupErrorShapeColor">#4D242C3E</color>
+    <color name="popupErrorShapeColor">@color/primaryColor</color>
     <color name="popupErrorTextViewColor">@color/textViewColor</color>
-    <color name="popupErrorButtonColor">@color/edittextColor</color>
+    <color name="popupErrorButtonColor">#4F000000</color>
     <color name="popupErrorButtonTextColor">@color/textViewColor</color>
 
-    <color name="chatsListShapeColor">#202839</color>
+    <color name="chatsListShapeColor">@color/primaryColor</color>
     <color name="chatShapeColor">#2B364C</color>
-    <color name="chatDateTextViewColor">#7A7A7A</color>
+    <color name="chatDateTextViewColor">@color/textViewColor3</color>
     <color name="chatNameTextViewColor">@color/textViewColor</color>
     <color name="chatSelected">#FFFFFF</color>
 
+    <color name="settingStartupColor">#0D1F2B</color>
+
+    <color name="gradientStartColor">#76FF21</color>
+    <color name="gradientEndColor">#CB0090FF</color>
 </resources>

@@ -5,12 +5,10 @@ import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.os.Bundle;
-import android.util.DisplayMetrics;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.Animation;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -20,36 +18,35 @@ import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import yybos.hash.katarakt2.Fragments.Custom.Listeners.SpinnerListener;
+import yybos.hash.katarakt2.Fragments.Custom.Objects.NullObject;
+import yybos.hash.katarakt2.Fragments.Custom.ViewAdapters.SpinnerViewAdapter;
 import yybos.hash.katarakt2.R;
-import yybos.hash.katarakt2.Socket.Objects.Chat;
-import yybos.hash.katarakt2.Socket.Objects.Server;
 
 public class CustomSpinnerFragment extends Fragment {
-    private FrameLayout frame;
     private ImageView icon;
 
     private FrameLayout objectsFrame;
     private ConstraintLayout constraint;
     private TextView optionText;
-    private Object option;
-    private SpinnerListener listener;
 
     private boolean isOpen = false;
 
-    private List<?> objectsList;
+    private SpinnerListener spinnerListener;
 
-    public CustomSpinnerFragment (List<?> objects) {
-        Chat[] chats = { Chat.toChat(0, "chat1"), Chat.toChat(0, "chat2"), Chat.toChat(0, "chat3") };
-        this.objectsList = new ArrayList<>(Arrays.asList(chats));
+    private SpinnerViewAdapter adapter;
+
+    private final int dropdownSize = 180;
+
+    // requires empty constructor
+    public CustomSpinnerFragment () {}
+    public CustomSpinnerFragment (SpinnerListener listener) {
+        this.spinnerListener = listener;
     }
 
     @Override
@@ -69,22 +66,26 @@ public class CustomSpinnerFragment extends Fragment {
 
         this.constraint = root.findViewById(R.id.customSpinnerConstraint);
 
-        this.frame = root.findViewById(R.id.customSpinnerFrame);
+        FrameLayout frame = root.findViewById(R.id.customSpinnerFrame);
         this.icon = root.findViewById(R.id.customSpinnerIcon);
         this.optionText = root.findViewById(R.id.customSpinnerOptionText);
 
-        this.frame.setZ(500f);
+        frame.setZ(500f);
         this.icon.setZ(5001f);
 
         this.icon.setRotation(-90);
 
-        this.frame.setOnClickListener((v) -> {
+        frame.setOnClickListener((v) -> {
             CustomSpinnerFragment.this.rotateIcon();
 
             if (!CustomSpinnerFragment.this.isOpen) {
+                this.isOpen = true;
+                this.spinnerListener.onSpinnerExpand();
                 CustomSpinnerFragment.this.displayObjects();
             }
             else {
+                this.isOpen = false;
+                this.spinnerListener.onSpinnerContract();
                 CustomSpinnerFragment.this.closeObjectsList();
             }
         });
@@ -101,63 +102,52 @@ public class CustomSpinnerFragment extends Fragment {
     }
 
     private void displayObjects () {
-        CustomSpinnerFragment.this.isOpen = true;
-
         Context context = requireContext();
+
+        // frame layout and parameters
+        this.objectsFrame = new FrameLayout(context);
+        this.objectsFrame.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.custom_spinner_dropdown_shape, context.getTheme()));
+        this.objectsFrame.setPadding(0, this.getDp(50), 0, this.getDp(10));
+        this.objectsFrame.setId(View.generateViewId());
+
+        ConstraintLayout.LayoutParams objectsFrameParams = new ConstraintLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0);
+        this.constraint.addView(this.objectsFrame, objectsFrameParams);
 
         LinearLayout objectsFrameLinearLayout = new LinearLayout(context);
         objectsFrameLinearLayout.setOrientation(LinearLayout.VERTICAL);
 
-        FrameLayout.LayoutParams objectsFrameLinearLayoutParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        // recycler view
+        this.adapter = new SpinnerViewAdapter(this);
 
-        this.objectsFrame = new FrameLayout(context);
-        this.objectsFrame.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.custom_spinner_dropdown_shape, context.getTheme()));
-        this.objectsFrame.setPadding(0, 180, 0, 0);
+        RecyclerView recyclerView = new RecyclerView(context);
+        recyclerView.setAdapter(this.adapter);
+        recyclerView.setLayoutManager(new LinearLayoutManager(context));
 
-        ConstraintLayout.LayoutParams objectsFrameParams = new ConstraintLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0);
-        objectsFrameParams.topMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 40, new DisplayMetrics());
+        this.adapter.addObject(new NullObject());
 
-        this.constraint.addView(this.objectsFrame, objectsFrameParams);
+        // add to screen
+        objectsFrameLinearLayout.addView(recyclerView, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        this.objectsFrame.addView(objectsFrameLinearLayout, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         // animation for it to open
-        ValueAnimator anim = ValueAnimator.ofInt(0, 500);
+        ValueAnimator anim = ValueAnimator.ofInt(this.getDp(40), this.getDp(this.dropdownSize));
         anim.setDuration(300);
         anim.addUpdateListener((listener) -> {
-            objectsFrameParams.matchConstraintMaxHeight = (int) listener.getAnimatedValue();
-            this.objectsFrame.requestLayout();
+            objectsFrameParams.height = (int) listener.getAnimatedValue();
+            this.objectsFrame.setLayoutParams(objectsFrameParams);
         });
         anim.start();
-
-        for (Object object : this.objectsList) {
-            FrameLayout textFrame = new FrameLayout(context);
-            textFrame.setBackgroundColor(getResources().getColor(R.color.spinnerColor, context.getTheme()));
-            textFrame.setPadding(30, 30, 30, 30);
-            textFrame.setOnClickListener((v) -> {
-                CustomSpinnerFragment.this.setOption(object);
-                CustomSpinnerFragment.this.closeObjectsList();
-            });
-
-            TextView text = new TextView(context);
-            text.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
-            text.setText(object.toString());
-
-            textFrame.addView(text);
-            objectsFrameLinearLayout.addView(textFrame, new ConstraintLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        }
-
-        this.objectsFrame.addView(objectsFrameLinearLayout, objectsFrameLinearLayoutParams);
     }
     private void closeObjectsList () {
         if (this.objectsFrame == null)
             return;
 
-        this.isOpen = false;
         this.rotateIcon();
 
         ConstraintLayout.LayoutParams objectsFrameParams = (ConstraintLayout.LayoutParams) this.objectsFrame.getLayoutParams();
 
         // animation for it to open
-        ValueAnimator anim = ValueAnimator.ofInt(500, 0);
+        ValueAnimator anim = ValueAnimator.ofInt(this.getDp(this.dropdownSize), this.getDp(40));
         anim.setDuration(300);
         anim.addUpdateListener((listener) -> {
             objectsFrameParams.matchConstraintMaxHeight = (int) listener.getAnimatedValue();
@@ -188,13 +178,26 @@ public class CustomSpinnerFragment extends Fragment {
         anim.start();
     }
 
-    public void setOption (Object object) {
-        this.option = object;
+    public void objectSelected (Object object) {
+        this.isOpen = false;
+        this.closeObjectsList();
+
         this.optionText.setText(object.toString());
 
-        this.listener.onOptionChanged(object);
+        this.spinnerListener.onObjectSelected(object);
     }
-    public void setOptionListener (SpinnerListener listener) {
-        this.listener = listener;
+
+    public void setOption (Object object) {
+        this.optionText.setText(object.toString());
+    }
+
+    private int getDp (int pixel) {
+        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, pixel, requireContext().getResources().getDisplayMetrics());
+    }
+
+    // add object to adapter > recyclerView
+    public void addObject (Object object) {
+        if (this.adapter != null)
+            this.adapter.addObject(object);
     }
 }

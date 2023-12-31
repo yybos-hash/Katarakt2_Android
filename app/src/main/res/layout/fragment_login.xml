@@ -33,7 +33,7 @@
         android:layout_marginBottom="20dp"
         android:clickable="true"
         android:src="@android:drawable/ic_input_add"
-        app:backgroundTint="@color/secondaryColor"
+        app:backgroundTint="@color/loginButtonColor"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:contentDescription="TODO" />

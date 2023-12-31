@@ -14,11 +14,9 @@ import androidx.fragment.app.Fragment;
 
 import org.jetbrains.annotations.Nullable;
 
-import yybos.hash.katarakt2.Fragments.Custom.Listeners.ToggleListener;
 import yybos.hash.katarakt2.R;
 
 public class CustomToggleFragment extends Fragment {
-    private ToggleListener listener;
     private boolean isTrue = false;
 
     private View circle;
@@ -59,9 +57,6 @@ public class CustomToggleFragment extends Fragment {
         FrameLayout.LayoutParams circleParams = new FrameLayout.LayoutParams((int) getResources().getDimension(R.dimen.toggle_circle_size), (int) getResources().getDimension(R.dimen.toggle_circle_size));
         circleParams.gravity = Gravity.CENTER_VERTICAL | Gravity.END;
         this.circle.setLayoutParams(circleParams);
-
-//        FunnySounds funny = new FunnySounds();
-//        funny.playSound(requireContext(), R.raw.rage);
     }
     public void makeFalse () {
         this.isTrue = false;
@@ -79,9 +74,6 @@ public class CustomToggleFragment extends Fragment {
             this.makeFalse();
         else
             this.makeTrue();
-
-        if (this.listener != null)
-            this.listener.onValueChanged(this.getState());
     }
     public boolean getState () {
         // do not send a reference

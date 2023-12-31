@@ -6,7 +6,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
-import android.widget.ImageView;
+import android.widget.FrameLayout;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
@@ -28,9 +28,9 @@ public class MainActivity extends AppCompatActivity {
     private View selectedTab;
     private View selectionTab;
 
-    private ImageView buttonChat;
-    private ImageView buttonSettings;
-    private ImageView buttonLogin;
+    private FrameLayout buttonChat;
+    private FrameLayout buttonSettings;
+    private FrameLayout buttonLogin;
 
     private Client client;
     private List<Message> messageHistory;
@@ -64,8 +64,6 @@ public class MainActivity extends AppCompatActivity {
         this.buttonChat.setOnClickListener(this::tabPressed);
         this.buttonSettings.setOnClickListener(this::tabPressed);
         this.buttonLogin.setOnClickListener(this::tabPressed);
-
-        this.buttonLogin.performClick();
 
         this.messageHistory = new ArrayList<>();
 
@@ -149,9 +147,6 @@ public class MainActivity extends AppCompatActivity {
     public ChatFragment getChatFragmentInstance () {
         return this.chatFragmentInstance;
     }
-    public LoginFragment getLoginFragmentInstance() {
-        return this.loginFragmentInstance;
-    }
 
     public synchronized void showCustomToast (String message, int backgroundColor) {
         Bundle args = new Bundle();
@@ -171,7 +166,9 @@ public class MainActivity extends AppCompatActivity {
         fragmentTransaction.setCustomAnimations(R.anim.custom_toast_expand, R.anim.custom_toast_contract);
 
         // Replace the existing fragment with the new one
-        fragmentTransaction.replace(R.id.customToastFragmentView, this.customToastInstance);
+        if (!getSupportFragmentManager().isStateSaved()) {
+            fragmentTransaction.replace(R.id.customToastFragmentView, this.customToastInstance);
+        }
 
         // Use a Handler to post the transaction on the main thread
         // Commit the transaction

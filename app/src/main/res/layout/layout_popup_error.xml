@@ -44,7 +44,7 @@
                 android:background="@drawable/button_shape"
                 android:textStyle="normal"
                 android:textAllCaps="false"
-                android:textColor="@color/textViewColor"
+                android:textColor="@color/popupErrorButtonTextColor"
                 android:layout_marginBottom="10dp"/>
 
             <Button
@@ -54,7 +54,7 @@
                 android:background="@drawable/button_shape"
                 android:textStyle="normal"
                 android:textAllCaps="false"
-                android:textColor="@color/textViewColor"/>
+                android:textColor="@color/popupErrorButtonTextColor"/>
 
         </LinearLayout>
     </FrameLayout>

@@ -7,6 +7,15 @@
     android:background="@color/backgroundColor"
     tools:context=".MainActivity">
 
+    <View
+        android:id="@+id/activityMargin"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/secondaryColor"
+        app:layout_constraintBottom_toTopOf="@+id/activityLinearLayout"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
     <LinearLayout
         android:id="@+id/activityLinearLayout"
         android:layout_width="0dp"
@@ -16,35 +25,57 @@
         android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
+        app:layout_constraintStart_toStartOf="parent"
+        android:baselineAligned="false">
 
-        <ImageView
+        <FrameLayout
             android:id="@+id/activityButtonChat"
-            android:layout_width="@dimen/tab_icon_size"
-            android:layout_height="@dimen/tab_icon_size"
-            android:layout_marginHorizontal="50dp"
-            android:contentDescription="@string/todo"
-            android:src="@drawable/chat_icon"
-            tools:ignore="TouchTargetSizeCheck" />
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent">
 
-        <ImageView
+            <ImageView
+                android:layout_gravity="center"
+                android:layout_width="@dimen/tab_icon_size"
+                android:layout_height="@dimen/tab_icon_size"
+                android:layout_marginHorizontal="50dp"
+                android:contentDescription="@string/todo"
+                android:src="@drawable/chat_icon"
+                tools:ignore="TouchTargetSizeCheck" />
+        </FrameLayout>
+
+
+        <FrameLayout
             android:id="@+id/activityButtonLogin"
-            android:layout_width="@dimen/tab_icon_size"
-            android:layout_height="@dimen/tab_icon_size"
-            android:layout_marginHorizontal="50dp"
-            android:contentDescription="@string/todo"
-            android:src="@drawable/login_icon"
-            tools:ignore="TouchTargetSizeCheck" />
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent">
 
-        <ImageView
+            <ImageView
+                android:layout_gravity="center"
+                android:layout_width="@dimen/tab_icon_size"
+                android:layout_height="@dimen/tab_icon_size"
+                android:layout_marginHorizontal="50dp"
+                android:contentDescription="@string/todo"
+                android:src="@drawable/login_icon"
+                tools:ignore="TouchTargetSizeCheck" />
+        </FrameLayout>
+
+        <FrameLayout
             android:id="@+id/activityButtonSettings"
-            android:layout_width="@dimen/tab_icon_size"
-            android:layout_height="@dimen/tab_icon_size"
-            android:layout_marginHorizontal="50dp"
-            android:contentDescription="@string/todo"
-            android:src="@drawable/settings_icon"
-            tools:ignore="TouchTargetSizeCheck" />
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent">
 
+            <ImageView
+                android:layout_gravity="center"
+                android:layout_width="@dimen/tab_icon_size"
+                android:layout_height="@dimen/tab_icon_size"
+                android:layout_marginHorizontal="50dp"
+                android:contentDescription="@string/todo"
+                android:src="@drawable/settings_icon"
+                tools:ignore="TouchTargetSizeCheck" />
+        </FrameLayout>
     </LinearLayout>
 
     <View
@@ -74,7 +105,7 @@
         android:name="yybos.hash.katarakt2.WelcomeFragment"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/activityLinearLayout"
+        app:layout_constraintBottom_toTopOf="@+id/activityMargin"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"

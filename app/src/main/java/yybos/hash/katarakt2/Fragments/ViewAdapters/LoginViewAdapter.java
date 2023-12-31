@@ -70,6 +70,10 @@ public class LoginViewAdapter extends RecyclerView.Adapter<LoginViewHolder> {
         transaction.replace(holder.fragmentContainer.getId(), holder.toggleInstance);
         transaction.commit();
 
+        if (server.isDefault) {
+//            holder.toggleInstance.makeTrue();
+        }
+
         holder.mainLinearLayout.setOnLongClickListener((v) -> {
             this.loginFragmentInstance.openInfo(holder);
             return true;
@@ -85,11 +89,15 @@ public class LoginViewAdapter extends RecyclerView.Adapter<LoginViewHolder> {
 
                     if (toggleInstance.getState()) {
                         toggleInstance.makeFalse();
+                        viewHolder.serverInfo.isDefault = false;
                     }
                 }
             }
 
             holder.toggleInstance.toggle();
+
+            server.isDefault = true;
+            this.loginFragmentInstance.saveInfo(holder, server);
         });
     }
 

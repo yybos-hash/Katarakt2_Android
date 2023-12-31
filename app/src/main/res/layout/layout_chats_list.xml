@@ -7,40 +7,46 @@
 
     <LinearLayout
         android:id="@+id/chatsLinearLayout"
-        android:layout_width="300dp"
+        android:layout_width="180dp"
         android:layout_height="match_parent"
         android:background="@drawable/chats_list_shape"
         android:orientation="vertical"
+        android:layout_marginStart="450dp"
+        android:layout_marginVertical="70dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" >
 
         <LinearLayout
             android:id="@+id/chatsInnerLinearLayout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:gravity="center_horizontal"
             android:orientation="vertical">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
+                android:gravity="center"
                 android:layout_marginHorizontal="7dp"
                 android:layout_marginTop="7dp"
                 android:orientation="horizontal">
 
-                <ImageView
-                    android:id="@+id/chatsClose"
-                    android:layout_width="45dp"
-                    android:layout_height="45dp"
-                    android:src="@drawable/x_icon" />
+                <ProgressBar
+                    android:id="@+id/chatsProgressBar"
+                    style="@style/Widget.AppCompat.ProgressBar"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_gravity="start|center_vertical"
+                    android:indeterminate="true"
+                    android:indeterminateTint="#FFFFFF"
+                    android:progressTint="#FFFFFF" />
 
                 <ImageView
                     android:id="@+id/chatsAdd"
-                    android:layout_gravity="end"
-                    android:layout_marginStart="190dp"
                     android:layout_width="45dp"
                     android:layout_height="45dp"
+                    android:layout_marginStart="80dp"
                     android:src="@drawable/plus_icon"/>
             </LinearLayout>
 
@@ -50,33 +56,15 @@
                 android:text="Chats"
                 android:textColor="@color/textViewColor"
                 android:textSize="9pt"
-                android:textStyle="bold"
-                android:layout_marginTop="10dp"
-                android:layout_marginStart="15dp"/>
+                android:textStyle="bold" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/chatsRecyclerView"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginStart="20dp"
+                android:layout_height="400dp"
+                android:layout_marginStart="10dp"
                 android:layout_marginTop="18dp"
-                android:layout_marginEnd="20dp"
-                android:layout_marginBottom="20dp" />
+                android:layout_marginEnd="10dp" />
         </LinearLayout>
     </LinearLayout>
-
-    <ProgressBar
-        android:id="@+id/chatsProgressBar"
-        style="@style/Widget.AppCompat.ProgressBar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:indeterminate="true"
-        android:indeterminateTint="#FFFFFF"
-        android:progressTint="#FFFFFF"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.65"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
 </androidx.constraintlayout.widget.ConstraintLayout>

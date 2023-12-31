@@ -122,7 +122,7 @@ public class SettingsFragment extends Fragment {
         @Override
         public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
             // Adjust the scroll position based on the scroll distance
-            nestedScrollView.smoothScrollBy((int) distanceX, (int) distanceY);
+            SettingsFragment.this.nestedScrollView.smoothScrollBy((int) distanceX, (int) distanceY);
             return true;
         }
     }

@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,6 +19,7 @@ import android.widget.ProgressBar;
 
 import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -39,6 +41,7 @@ public class ChatsFragment extends Fragment implements ClientInterface {
 
     private ChatsViewAdapter chatsAdapter;
     private LinearLayout innerLinearLayout;
+    private LinearLayout linearLayout;
     private ConstraintLayout constraintLayout;
 
     private ProgressBar progressBar;
@@ -72,6 +75,7 @@ public class ChatsFragment extends Fragment implements ClientInterface {
 
         ImageView addButton = root.findViewById(R.id.chatsAdd);
         this.progressBar = root.findViewById(R.id.chatsProgressBar);
+        this.linearLayout = root.findViewById(R.id.chatsLinearLayout);
         this.innerLinearLayout = root.findViewById(R.id.chatsInnerLinearLayout);
         this.constraintLayout = root.findViewById(R.id.chatsConstraintLayout);
 
@@ -82,10 +86,29 @@ public class ChatsFragment extends Fragment implements ClientInterface {
         recyclerView.setAdapter(this.chatsAdapter);
         recyclerView.setOverScrollMode(View.OVER_SCROLL_NEVER);
 
-        ImageView closeButton = root.findViewById(R.id.chatsClose);
-        closeButton.setOnClickListener((v) -> {
-            this.destroy();
+        // animation
+        // this is the linearLayout params width (just so I dont need to call getDp every cycle)
+        int y = this.getDp(70);
+
+        ValueAnimator animator = ValueAnimator.ofInt(this.getDp(450), this.getDp(180));
+        animator.setDuration(300);
+        animator.addUpdateListener((valueAnimator) -> {
+            int val = (int) valueAnimator.getAnimatedValue();
+
+            ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) ChatsFragment.this.linearLayout.getLayoutParams();
+            params.leftMargin = val;
+            params.setMargins(val, y, 0, y);
+
+            ChatsFragment.this.linearLayout.setLayoutParams(params);
+
+            // Also update the constraints
+            ConstraintSet constraintSet = new ConstraintSet();
+            constraintSet.clone(ChatsFragment.this.constraintLayout);
+            constraintSet.connect(ChatsFragment.this.linearLayout.getId(), ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, val);
+            constraintSet.applyTo(ChatsFragment.this.constraintLayout);
         });
+        animator.start();
+        //
 
         addButton.setOnClickListener((v) -> {
             if (this.mainActivityInstance.getClient().isConnected())
@@ -93,9 +116,6 @@ public class ChatsFragment extends Fragment implements ClientInterface {
             else
                 ChatsFragment.this.mainActivityInstance.showCustomToast("No.", Color.argb(90, 235, 64, 52));
         });
-
-        // set everything to invisible so the chats_list_expand animation doesnt glitch the layout
-        this.innerLinearLayout.setVisibility(View.INVISIBLE);
 
         // make things visible again after the animation ends
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
@@ -213,12 +233,40 @@ public class ChatsFragment extends Fragment implements ClientInterface {
         this.progressBar.setVisibility(View.INVISIBLE);
     }
     public void destroy () {
-        this.innerLinearLayout.removeAllViews();
+        // this is the linearLayout params width (just so I dont need to call getDp every cycle)
+        int y = this.getDp(70);
 
-        FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
-        transaction.setCustomAnimations(R.anim.chats_list_expand, R.anim.chats_list_contract);
-        transaction.remove(this);
-        transaction.commit();
+        ValueAnimator animator = ValueAnimator.ofInt(this.getDp(180), this.getDp(450));
+        animator.setDuration(150);
+        animator.addUpdateListener((valueAnimator) -> {
+            int val = (int) valueAnimator.getAnimatedValue();
+
+            ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) ChatsFragment.this.linearLayout.getLayoutParams();
+            params.leftMargin = val;
+            params.setMargins(val, y, 0, y);
+
+            ChatsFragment.this.linearLayout.setLayoutParams(params);
+
+            // Also update the constraints
+            ConstraintSet constraintSet = new ConstraintSet();
+            constraintSet.clone(ChatsFragment.this.constraintLayout);
+            constraintSet.connect(ChatsFragment.this.linearLayout.getId(), ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, val);
+            constraintSet.applyTo(ChatsFragment.this.constraintLayout);
+        });
+        animator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+
+                FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+                transaction.remove(ChatsFragment.this);
+                transaction.commit();
+
+                // doesnt need an actual result, just something to notify the destruction to the chatFragment
+                getParentFragmentManager().setFragmentResult("chatsFragment", new Bundle());
+            }
+        });
+        animator.start();
     }
 
     @Override
@@ -244,9 +292,10 @@ public class ChatsFragment extends Fragment implements ClientInterface {
     public void onDestroyView () {
         this.mainActivityInstance.removeClientListener(this);
 
-        // doesnt need an actual result, just something to notify the destruction to the chatFragment
-        getParentFragmentManager().setFragmentResult("chatsFragment", new Bundle());
-
         super.onDestroyView();
+    }
+
+    private int getDp (int pixel) {
+        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, pixel, requireContext().getResources().getDisplayMetrics());
     }
 }
