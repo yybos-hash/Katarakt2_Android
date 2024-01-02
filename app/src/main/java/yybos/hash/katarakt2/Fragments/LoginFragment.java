@@ -225,20 +225,21 @@ public class LoginFragment extends Fragment {
             server.serverPort = result.getInt("serverPort");
             server.email = result.getString("email");
             server.password = result.getString("password");
+            server.isDefault = viewHolder.serverInfo.isDefault;
 
-            this.saveInfo(viewHolder, server);
+            viewHolder.setInfo(server);
+
+            this.saveInfo(viewHolder);
             this.closeInfo(resKey);
         });
 
         // add frame layout to constraintLayout
         this.constraintLayout.addView(generalFrameLayout, frameLayoutParams);
     }
-    public void saveInfo (LoginViewHolder viewHolder, Server server) {
-        if (viewHolder == null || server == null)
+    public void saveInfo (LoginViewHolder viewHolder) {
+        if (viewHolder == null)
             return;
 
-
-        viewHolder.setInfo(server);
         this.serverAdapter.updateServer(viewHolder);
 
         // apply changes to serversList

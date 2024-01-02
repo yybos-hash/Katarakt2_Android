@@ -47,6 +47,8 @@ public class ChatsFragment extends Fragment implements ClientInterface {
 
     private ProgressBar progressBar;
 
+    private final int openMargin = 190;
+
     public ChatsFragment () {
 
     }
@@ -91,7 +93,7 @@ public class ChatsFragment extends Fragment implements ClientInterface {
         // this is the linearLayout params width (just so I dont need to call getDp every cycle)
         int y = this.getDp(70);
 
-        ValueAnimator animator = ValueAnimator.ofInt(this.getDp(450), this.getDp(180));
+        ValueAnimator animator = ValueAnimator.ofInt(this.getDp(450), this.getDp(this.openMargin));
         animator.setDuration(300);
         animator.addUpdateListener((valueAnimator) -> {
             int val = (int) valueAnimator.getAnimatedValue();
@@ -237,7 +239,7 @@ public class ChatsFragment extends Fragment implements ClientInterface {
         // this is the linearLayout params width (just so I dont need to call getDp every cycle)
         int y = this.getDp(70);
 
-        ValueAnimator animator = ValueAnimator.ofInt(this.getDp(180), this.getDp(450));
+        ValueAnimator animator = ValueAnimator.ofInt(this.getDp(this.openMargin), this.getDp(450));
         animator.setDuration(150);
         animator.addUpdateListener((valueAnimator) -> {
             int val = (int) valueAnimator.getAnimatedValue();

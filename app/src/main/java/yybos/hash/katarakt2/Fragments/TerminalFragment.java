@@ -1,11 +1,13 @@
 package yybos.hash.katarakt2.Fragments;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -67,9 +69,14 @@ public class TerminalFragment extends Fragment implements ClientInterface {
                     // initiate fragment manager
                     FragmentManager fragmentManager = getParentFragmentManager();
                     if (!fragmentManager.isStateSaved()) {
+                        InputMethodManager inputMethodManager = (InputMethodManager) requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+
+                        if (inputMethodManager != null)
+                            inputMethodManager.hideSoftInputFromWindow(root.getWindowToken(), 0);
+
                         FragmentTransaction transaction = fragmentManager.beginTransaction();
                         transaction.remove(this);
-                        transaction.commitNow();
+                        transaction.commit();
                     }
 
                     return true;

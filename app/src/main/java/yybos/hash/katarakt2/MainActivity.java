@@ -169,7 +169,7 @@ public class MainActivity extends AppCompatActivity {
 
         FragmentManager fragmentManager = getSupportFragmentManager();
         if (fragmentManager.isStateSaved())
-            return;
+            fragmentManager.executePendingTransactions();
 
         FragmentTransaction transaction = fragmentManager.beginTransaction();
 
@@ -184,9 +184,7 @@ public class MainActivity extends AppCompatActivity {
         transaction.setCustomAnimations(R.anim.custom_toast_expand, R.anim.custom_toast_contract);
 
         // Replace the existing fragment with the new one
-        if (!getSupportFragmentManager().isStateSaved()) {
-            transaction.replace(R.id.customToastFragmentView, this.customToastInstance);
-        }
+        transaction.replace(R.id.customToastFragmentView, this.customToastInstance);
 
         // Use a Handler to post the transaction on the main thread
         // Commit the transaction

@@ -81,8 +81,6 @@ public class ChatFragment extends Fragment implements ClientInterface {
 
         View root = getView();
 
-
-
         // changed all of this to the onViewCreated because of the back stack (the fragment is not destroyed neither created when its added to the back strack)
         // but the view is destroyed and created again, so ill be using that
         this.mainActivityInstance = ((MainActivity) requireActivity());
@@ -95,8 +93,6 @@ public class ChatFragment extends Fragment implements ClientInterface {
 
         // listen to incoming messages
         this.mainActivityInstance.addClientListener(this);
-
-
 
         // move selection tab (I'm doing it from the fragment cause it will fix the issue where if I used the back stack trace the selectionTab wouldnt move)
         this.mainActivityInstance.moveSelectionTab(this);
@@ -125,7 +121,6 @@ public class ChatFragment extends Fragment implements ClientInterface {
                 }
 
                 if (ChatFragment.this.mainActivityInstance.currentChatId <= 0) {
-                    v.clearFocus();
                     ChatFragment.this.mainActivityInstance.showCustomToast("No chat selected", Color.argb(90, 235, 64, 52));
                 }
             }
@@ -179,11 +174,6 @@ public class ChatFragment extends Fragment implements ClientInterface {
         if (!this.client.isConnected())
             return;
 
-        if (ChatFragment.this.mainActivityInstance.currentChatId <= 0) {
-            ChatFragment.this.mainActivityInstance.showCustomToast("No chat selected", Color.argb(90, 235, 64, 52));
-            return;
-        }
-
         String content = this.editText.getText().toString().trim().replace("\0", ""); // just to make sure, remove any possible null characters
         if (content.trim().isEmpty())
             return;
@@ -197,9 +187,11 @@ public class ChatFragment extends Fragment implements ClientInterface {
 
         Message message = Message.toMessage(content, this.mainActivityInstance.currentChatId, this.client.user);
 
-        this.client.sendMessage(message);
-        this.chatAdapter.addMessage(message);
-        this.history.add(message);
+        if (ChatFragment.this.mainActivityInstance.currentChatId > 0) {
+            this.client.sendMessage(message);
+            this.chatAdapter.addMessage(message);
+            this.history.add(message);
+        }
 
         this.scrollToLastMessage();
     }

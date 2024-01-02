@@ -69,6 +69,8 @@ public class LoginViewAdapter extends RecyclerView.Adapter<LoginViewHolder> {
         // Dynamically add CustomToggleFragment to the FragmentContainerView
         FragmentManager fragmentManager = ((FragmentActivity) this.loginFragmentInstance.requireContext()).getSupportFragmentManager();
         if (!fragmentManager.isStateSaved()) {
+            holder.toggleInstance = new CustomToggleFragment();
+
             FragmentTransaction transaction = fragmentManager.beginTransaction();
             transaction.replace(holder.fragmentContainer.getId(), holder.toggleInstance);
             transaction.commit();
@@ -86,13 +88,12 @@ public class LoginViewAdapter extends RecyclerView.Adapter<LoginViewHolder> {
             this.loginFragmentInstance.tryConnection(server);
         });
         holder.fragmentContainer.setOnClickListener((v) -> {
-
-            // disabled any other active toggles
+            // disable any other active toggles
             if (!holder.toggleInstance.getState()) {
                 for (LoginViewHolder viewHolder : this.holders) {
                     CustomToggleFragment toggleInstance = viewHolder.toggleInstance;
 
-                    if (toggleInstance.getState()) {
+                    if (toggleInstance.getState() && viewHolder != holder) {
                         toggleInstance.makeFalse();
                         viewHolder.serverInfo.isDefault = false;
                     }
@@ -100,9 +101,9 @@ public class LoginViewAdapter extends RecyclerView.Adapter<LoginViewHolder> {
             }
 
             holder.toggleInstance.toggle();
+            server.isDefault = !server.isDefault;
 
-            server.isDefault = true;
-            this.loginFragmentInstance.saveInfo(holder, server);
+            this.loginFragmentInstance.saveInfo(holder);
         });
     }
 

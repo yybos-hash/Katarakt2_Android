@@ -18,7 +18,7 @@
 
     <color name="buttonColor">#23FFFFFF</color>
     <color name="toggleColor">#B2000000</color>
-    <color name="toggleEnabledColor">#BFFF1967</color>
+    <color name="toggleEnabledColor">#BFE40D38</color>
     <color name="spinnerColor">@color/primaryColor</color>
 
     <!--  view's color  -->

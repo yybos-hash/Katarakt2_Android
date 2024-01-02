@@ -155,6 +155,8 @@ public class Client {
                     } while (true);
                     rawMessage = new StringBuilder(rawMessage.toString().replace("\0", ""));
 
+                    System.out.println(rawMessage);
+
                     // parse rawMessage
                     packetObject = PacketObject.fromString(rawMessage.toString());
 

@@ -89,11 +89,11 @@ public class CustomToggleFragment extends Fragment {
             this.makeTrue();
     }
     public boolean getState () {
-        // do not send a reference
+        // do not send a reference. Edit: too late
         return this.isTrue;
     }
 
-    private Drawable createRoundedRectangleDrawable(int color) {
+    private Drawable createRoundedRectangleDrawable (int color) {
         GradientDrawable drawable = new GradientDrawable();
         drawable.setShape(GradientDrawable.RECTANGLE);
         drawable.setColor(color);

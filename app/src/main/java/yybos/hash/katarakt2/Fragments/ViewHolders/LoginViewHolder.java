@@ -36,8 +36,6 @@ public class LoginViewHolder extends RecyclerView.ViewHolder {
         this.mainLinearLayout = root.findViewById(R.id.serverMainLinearLayout);
 
         this.fragmentContainer.setId(View.generateViewId());
-
-        this.toggleInstance = new CustomToggleFragment();
     }
 
     public void setInfo (Server serverInfo) {

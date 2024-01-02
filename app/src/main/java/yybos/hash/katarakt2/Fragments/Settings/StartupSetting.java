@@ -4,11 +4,11 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentActivity;
-import androidx.fragment.app.FragmentContainerView;
+import androidx.fragment.app.FragmentManager;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -35,8 +35,8 @@ public class StartupSetting extends Fragment {
     public void onViewCreated (@NonNull View view, @Nullable Bundle savedInstanceState) {
         View root = view.getRootView();
 
-        FragmentContainerView toggleA = root.findViewById(R.id.settingStartupToggle);
-        FragmentContainerView toggleB = root.findViewById(R.id.settingStartupToggle2);
+        FrameLayout toggleA = root.findViewById(R.id.settingStartupToggle);
+        FrameLayout toggleB = root.findViewById(R.id.settingStartupToggle2);
 
         CustomToggleFragment customToggleA = new CustomToggleFragment();
         CustomToggleFragment customToggleB = new CustomToggleFragment();
@@ -51,11 +51,23 @@ public class StartupSetting extends Fragment {
         toggleA.setId(View.generateViewId());
         toggleB.setId(View.generateViewId());
 
-        ((FragmentActivity) requireContext()).getSupportFragmentManager().beginTransaction()
+        FragmentManager fragmentManager;
+
+        fragmentManager = getParentFragmentManager();
+        if (fragmentManager.isStateSaved())
+            fragmentManager.executePendingTransactions();
+
+        fragmentManager.beginTransaction()
                 .add(toggleA.getId(), customToggleA)
                 .commit();
 
-        ((FragmentActivity) requireContext()).getSupportFragmentManager().beginTransaction()
+        // second fragment
+
+        fragmentManager = getParentFragmentManager();
+        if (fragmentManager.isStateSaved())
+            fragmentManager.executePendingTransactions();
+
+        fragmentManager.beginTransaction()
                 .add(toggleB.getId(), customToggleB)
                 .commit();
     }

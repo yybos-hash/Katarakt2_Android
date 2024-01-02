@@ -6,11 +6,11 @@ import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentActivity;
-import androidx.fragment.app.FragmentContainerView;
+import androidx.fragment.app.FragmentManager;
 
 import com.google.gson.Gson;
 
@@ -60,12 +60,16 @@ public class ChatSetting extends Fragment implements ClientInterface, SpinnerLis
     public void onViewCreated (@NonNull View view, @Nullable Bundle savedInstanceState) {
         View root = view.getRootView();
 
-        FragmentContainerView spinnerContainer = root.findViewById(R.id.settingChatContainer);
+        FrameLayout spinnerContainer = root.findViewById(R.id.settingChatContainer);
         spinnerContainer.setId(View.generateViewId());
 
         this.spinner = new CustomSpinnerFragment(this);
 
-        ((FragmentActivity) requireContext()).getSupportFragmentManager().beginTransaction()
+        FragmentManager fragmentManager = getParentFragmentManager();
+        if (fragmentManager.isStateSaved())
+            fragmentManager.executePendingTransactions();
+
+        fragmentManager.beginTransaction()
                 .add(spinnerContainer.getId(), this.spinner)
                 .commit();
 
