@@ -102,18 +102,18 @@ public class ChatSetting extends Fragment implements ClientInterface, SpinnerLis
     }
 
     @Override
-    public void onCommandReceived(Command command) {
+    public void onCommandReceived (Command command) {
 
     }
 
     // client listener
     @Override
-    public void onMessageReceived(Message message) {
+    public void onMessageReceived (Message message) {
 
     }
 
     @Override
-    public void onChatReceived(Chat chat) {
+    public void onChatReceived (Chat chat) {
         // if it's inside the main thread
         if (Looper.myLooper() == Looper.getMainLooper()) {
             this.spinner.addObject(chat);
@@ -128,14 +128,14 @@ public class ChatSetting extends Fragment implements ClientInterface, SpinnerLis
 
     // spinner listener
     @Override
-    public void onSpinnerExpand() {
+    public void onSpinnerExpand () {
         if (mainActivityInstance.getClient().isConnected()) {
             mainActivityInstance.getClient().sendCommand(Command.getChats());
         }
     }
 
     @Override
-    public void onSpinnerContract() {
+    public void onSpinnerContract () {
     }
 
     @Override
@@ -150,7 +150,7 @@ public class ChatSetting extends Fragment implements ClientInterface, SpinnerLis
     }
 
     // abubeblu
-    public void writeToFile(Context context, Chat chat, String fileName) {
+    public void writeToFile (Context context, Chat chat, String fileName) {
         Gson gson = new Gson();
 
         try {
@@ -176,7 +176,7 @@ public class ChatSetting extends Fragment implements ClientInterface, SpinnerLis
             e.printStackTrace();
         }
     }
-    public String readFileFromInternalStorage(Context context, String fileName) {
+    public String readFileFromInternalStorage (Context context, String fileName) {
         StringBuilder content = new StringBuilder();
 
         try {
@@ -209,7 +209,7 @@ public class ChatSetting extends Fragment implements ClientInterface, SpinnerLis
 
         return content.toString();
     }
-    public Chat parseJsonString(String jsonString) {
+    public Chat parseJsonString (String jsonString) {
         if (jsonString.isEmpty())
             return null;
 

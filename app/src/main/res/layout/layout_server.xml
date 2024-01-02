@@ -24,13 +24,11 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
-            <androidx.fragment.app.FragmentContainerView
+            <FrameLayout
                 android:id="@+id/serverFragmentContainer"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:name="yybos.hash.katarakt2.Fragments.Custom.CustomToggleFragment"
-                tools:layout="@layout/custom_toggle"/>
+                android:layout_gravity="center_horizontal" />
 
             <TextView
                 android:layout_width="wrap_content"

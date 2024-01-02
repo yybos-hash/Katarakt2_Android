@@ -241,9 +241,13 @@ public class LoginFragment extends Fragment {
             return;
 
         this.serverAdapter.updateServer(viewHolder);
+        this.saveDefaultServer(viewHolder.serverInfo);
 
         // apply changes to serversList
         this.writeServersToFile(getContext(), this.serverAdapter.getServers(), Constants.serversListFilename);
+    }
+    public void saveDefaultServer (Server server) {
+        this.writeServerToFile(requireContext(), server, Constants.defaultServerFilename);
     }
     public void closeInfo (String tag) {
         this.floatingButton.setEnabled(true);
@@ -279,7 +283,34 @@ public class LoginFragment extends Fragment {
     }
 
     // abubeblu
-    public void writeServersToFile(Context context, List<Server> serverList, String fileName) {
+    public void writeServerToFile (Context context, Server server, String fileName) {
+        if (server == null)
+            return;
+
+        Gson gson = new Gson();
+
+        try {
+            // Open the file for writing
+            FileOutputStream fileOutputStream = context.openFileOutput(fileName, Context.MODE_PRIVATE);
+
+            // Wrap the FileOutputStream in an OutputStreamWriter
+            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(fileOutputStream);
+
+            if (server.isDefault) {
+                String jsonString = gson.toJson(server);
+                outputStreamWriter.write(jsonString);
+            }
+            else
+                outputStreamWriter.write("");
+
+            // Close the streams
+            outputStreamWriter.close();
+            fileOutputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    public void writeServersToFile (Context context, List<Server> serverList, String fileName) {
         if (serverList == null)
             return;
 
@@ -303,7 +334,7 @@ public class LoginFragment extends Fragment {
             e.printStackTrace();
         }
     }
-    public String readFileFromInternalStorage(Context context, String fileName) {
+    public String readFileFromInternalStorage (Context context, String fileName) {
         StringBuilder content = new StringBuilder();
 
         try {
@@ -336,7 +367,7 @@ public class LoginFragment extends Fragment {
 
         return content.toString();
     }
-    public List<Server> parseJsonString(String jsonString) {
+    public List<Server> parseJsonString (String jsonString) {
         if (jsonString.isEmpty())
             return null;
 
@@ -354,7 +385,7 @@ public class LoginFragment extends Fragment {
         super.onDestroyView();
     }
 
-    public void tryConnection(Server server) {
+    public void tryConnection (Server server) {
         this.mainActivityInstance.getClient().tryConnection(server);
     }
 }

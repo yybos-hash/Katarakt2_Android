@@ -17,4 +17,5 @@ public class Constants {
 
     public static final String serversListFilename = "servers_list.json";
     public static final String defaultChatFilename = "default_chat.json";
+    public static final String defaultServerFilename = "default_server.json";
 }

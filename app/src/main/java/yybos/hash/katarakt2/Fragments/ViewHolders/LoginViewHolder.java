@@ -1,12 +1,12 @@
 package yybos.hash.katarakt2.Fragments.ViewHolders;
 
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.fragment.app.FragmentContainerView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import yybos.hash.katarakt2.Fragments.Custom.CustomToggleFragment;
@@ -18,7 +18,7 @@ public class LoginViewHolder extends RecyclerView.ViewHolder {
     public TextView serverPort;
     public ConstraintLayout constraintLayout;
     public LinearLayout mainLinearLayout;
-    public FragmentContainerView fragmentContainer;
+    public FrameLayout fragmentContainer;
 
     public CustomToggleFragment toggleInstance;
 
