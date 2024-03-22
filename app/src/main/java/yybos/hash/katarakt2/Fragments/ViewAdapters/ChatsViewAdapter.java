@@ -15,21 +15,22 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
+import java.sql.Date;
 import java.util.List;
 
-import yybos.hash.katarakt2.Fragments.ChatFragment;
+import yybos.hash.katarakt2.Fragments.MessagesFragment;
 import yybos.hash.katarakt2.Fragments.Popup.OptionFragment;
 import yybos.hash.katarakt2.Fragments.ViewHolders.ChatsViewHolder;
 import yybos.hash.katarakt2.R;
-import yybos.hash.katarakt2.Socket.Objects.Chat;
+import yybos.hash.katarakt2.Socket.Objects.Message.Chat;
 
 public class ChatsViewAdapter extends RecyclerView.Adapter<ChatsViewHolder> {
     private final List<Chat> chats = new ArrayList<>();
-    private ChatFragment chatFragmentInstance;
+    private MessagesFragment messagesFragmentInstance;
 
-    public ChatsViewAdapter (ChatFragment chatFragment) {
-        if (chatFragment != null)
-            this.chatFragmentInstance = chatFragment;
+    public ChatsViewAdapter (MessagesFragment messagesFragment) {
+        if (messagesFragment != null)
+            this.messagesFragmentInstance = messagesFragment;
     }
 
     public void addChat (Chat chat) {
@@ -48,23 +49,23 @@ public class ChatsViewAdapter extends RecyclerView.Adapter<ChatsViewHolder> {
     public void onBindViewHolder(@NonNull ChatsViewHolder holder, int position) {
         Chat chat = this.chats.get(position);
 
-        Context context = this.chatFragmentInstance.requireContext();
+        Context context = this.messagesFragmentInstance.requireContext();
 
         if (chat.getName() != null) {
             holder.nameTextView.setText(chat.getName());
 
-            if (chat.getId() == this.chatFragmentInstance.getCurrentChatId()) {
+            if (chat.getId() == this.messagesFragmentInstance.getCurrentChatId()) {
                 holder.setChatSelected(context, true);
             }
         }
 
-        if (chat.getDate() != null)
-            holder.dateTextView.setText(chat.getDate().toString());
+        if (chat.getDate() != 0)
+            holder.dateTextView.setText(new Date(chat.getDate()).toString());
 
         holder.constraintLayout.setOnClickListener(v -> {
-            this.chatFragmentInstance.showCustomToast("Loading " + chat.getName(), Color.argb(80, 0, 153, 255));
-            this.chatFragmentInstance.updateMessageHistory(chat.getId());
-            this.chatFragmentInstance.closeChats();
+            this.messagesFragmentInstance.showCustomToast("Loading " + chat.getName(), Color.argb(80, 0, 153, 255));
+            this.messagesFragmentInstance.updateMessageHistory(chat.getId());
+            this.messagesFragmentInstance.closeChats();
         });
         holder.constraintLayout.setOnLongClickListener(v -> {
             holder.setOptionSelected(true);
@@ -72,7 +73,7 @@ public class ChatsViewAdapter extends RecyclerView.Adapter<ChatsViewHolder> {
             int holderX = holder.getScreenPosition().centerX();
             int holderY = holder.getScreenPosition().centerY();
 
-            FrameLayout generalFrameLayout = this.chatFragmentInstance.createFrameLayout();
+            FrameLayout generalFrameLayout = this.messagesFragmentInstance.createFrameLayout();
             generalFrameLayout.setOnClickListener(view -> {
                 holder.setOptionSelected(false);
 
@@ -95,7 +96,7 @@ public class ChatsViewAdapter extends RecyclerView.Adapter<ChatsViewHolder> {
                     .commit();
 
             deleteOption.setOnClickListener((shit) -> {
-                this.chatFragmentInstance.displayInfo(
+                this.messagesFragmentInstance.displayInfo(
                 "Wait!",
                 "Do you really want to delete " + chat.getName() + " and all of it's messages?",
                 "Yes",
@@ -104,7 +105,7 @@ public class ChatsViewAdapter extends RecyclerView.Adapter<ChatsViewHolder> {
                     int button = result.getInt("button");
 
                     if (button == 1) {
-                        this.chatFragmentInstance.deleteChat(chat.getId());
+                        this.messagesFragmentInstance.deleteChat(chat.getId());
 
                         // If I use this.chats.remove(index) a lot of things will go wrong
                         for (int i = 0; i < this.chats.size(); i++) {
@@ -116,7 +117,7 @@ public class ChatsViewAdapter extends RecyclerView.Adapter<ChatsViewHolder> {
                     }
 
                     // the resultKey is the same as the fragment tag
-                    this.chatFragmentInstance.closeInfoPopup(resultKey);
+                    this.messagesFragmentInstance.closeInfoPopup(resultKey);
                 });
                 holder.setOptionSelected(false);
 

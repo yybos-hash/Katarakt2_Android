@@ -4,6 +4,9 @@ import android.graphics.Color;
 import android.os.Looper;
 import android.util.Log;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -14,13 +17,15 @@ import java.util.List;
 
 import yybos.hash.katarakt2.MainActivity;
 import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
-import yybos.hash.katarakt2.Socket.Objects.Chat;
-import yybos.hash.katarakt2.Socket.Objects.Command;
+import yybos.hash.katarakt2.Socket.Objects.Anime;
+import yybos.hash.katarakt2.Socket.Objects.Message.Chat;
+import yybos.hash.katarakt2.Socket.Objects.Message.Command;
 import yybos.hash.katarakt2.Socket.Objects.Login;
-import yybos.hash.katarakt2.Socket.Objects.Message;
+import yybos.hash.katarakt2.Socket.Objects.Media.MediaFile;
+import yybos.hash.katarakt2.Socket.Objects.Message.Message;
 import yybos.hash.katarakt2.Socket.Objects.PacketObject;
 import yybos.hash.katarakt2.Socket.Objects.Server;
-import yybos.hash.katarakt2.Socket.Objects.User;
+import yybos.hash.katarakt2.Socket.Objects.Message.User;
 
 public class Client {
     private final List<ClientInterface> listeners = new ArrayList<>();
@@ -33,8 +38,6 @@ public class Client {
 
     private Utils messageUtils;
     private final MainActivity mainActivity;
-
-    private  String clientIp;
 
     public User user;
 
@@ -72,23 +75,26 @@ public class Client {
 
     private void connect () {
         try {
-            Socket managerSocket = new Socket();
+            Socket messageManagerSocket = new Socket();
+            Socket mediaManagerSocket = new Socket();
 
-            // sets the ip and port of the servers
+            // sets the ip and port
             SocketAddress managerAddress = new InetSocketAddress(this.ipAddress, this.port);
 
+            // connect the client
+
             this.isConnecting = true;
-            managerSocket.connect(managerAddress, 4000);
+            messageManagerSocket.connect(managerAddress, 4000);
+//            mediaManagerSocket.connect(managerAddress, 4000);
             this.isConnecting = false;
 
-            // connect the clients
-
-            if (!managerSocket.isConnected()) {
+            if (!messageManagerSocket.isConnected()) {
                 this.notifyMessageToListeners(Message.toMessage("Failed to connect to the server", User.toUser(0, "Socket")), false);
                 return;
             }
 
-            this.handleMessage(managerSocket);
+            new Thread(() -> this.handleMessage(messageManagerSocket)).start();
+//            new Thread(() -> this.handleMedia(mediaManagerSocket)).start();
         } catch (Exception e) {
             Log.i("Client Connection", "Deu meme");
             this.mainActivity.showCustomToast("Could not connect to " + this.ipAddress, Color.GRAY);
@@ -111,9 +117,6 @@ public class Client {
             this.isConnected = true;
             this.mainActivity.showCustomToast("Connected", Color.argb(90, 85, 209, 63));
 
-            int packet;
-            PacketObject packetObject;
-
             String bucket = "";
             StringBuilder rawMessage;
 
@@ -135,7 +138,7 @@ public class Client {
                                 rawMessage.append(bucket);
                         }
 
-                        packet = messageUtils.in.read(Constants.buffer);
+                        int packet = messageUtils.in.read(Constants.buffer);
                         if (packet <= 0) // if the packet bytes count is less or equal to 0 then the client has disconnected, which means that the thread should be terminated
                             throw new IOException("Client connection was abruptly interrupted");
 
@@ -155,32 +158,30 @@ public class Client {
                     } while (true);
                     rawMessage = new StringBuilder(rawMessage.toString().replace("\0", ""));
 
-                    System.out.println(rawMessage);
+                    // get packet type
+                    PacketObject.Type packetType = this.getPacketType(rawMessage.toString());
 
-                    // parse rawMessage
-                    packetObject = PacketObject.fromString(rawMessage.toString());
-
-                    if (packetObject.getType() == PacketObject.Type.Message) {
+                    if (packetType == PacketObject.Type.Message) {
                         Message message = Message.fromString(rawMessage.toString());
                         message.setUser(message.getUser());
 
+                        // notify message to listeners (chatFragment)
                         this.notifyMessageToListeners(message, true);
                     }
-                    else if (packetObject.getType() == PacketObject.Type.Chat) {
+                    else if (packetType == PacketObject.Type.Chat) {
                         Chat chat = Chat.fromString(rawMessage.toString());
 
                         // huehuehuehuehue
                         this.notifyChatToListeners(chat);
                     }
-                    else if (packetObject.getType() == PacketObject.Type.User) {
-                        // notify message to listeners (chatFragment)
+                    else if (packetType == PacketObject.Type.User) {
                         User user = User.fromString(rawMessage.toString());
 
                         // yeah, the login info
                         this.user = user;
                         this.mainActivity.setLoginUsername(user.getUsername());
                     }
-                    else if (packetObject.getType() == PacketObject.Type.Command) {
+                    else if (packetType == PacketObject.Type.Command) {
                         Command command = Command.fromString(rawMessage.toString());
 
                         switch (command.getCommand()) {
@@ -190,7 +191,7 @@ public class Client {
                                 break;
                             }
                             case "errorToast": {
-                                this.mainActivity.showCustomToast(command.getF(), Color.argb(90, 235, 64, 52));
+                                this.mainActivity.showCustomToast(command.getString("message"), Color.argb(90, 235, 64, 52));
 
                                 break;
                             }
@@ -201,13 +202,19 @@ public class Client {
                             }
                         }
                     }
+                    else if (packetType == PacketObject.Type.Anime) {
+                        Anime anime = Anime.fromString(rawMessage.toString());
+
+                        this.notifyAnimeToListeners(anime);
+                    }
                 }
             }
             catch (Exception e) {
                 messageUtils.close();
 
-                System.out.println("Exception in client: " + client.getInetAddress().toString());
+                System.out.println("Exception in client");
                 System.out.println(e.getMessage());
+                e.printStackTrace();
 
                 this.user.setUsername("");
                 this.mainActivity.setLoginUsername("");
@@ -232,7 +239,130 @@ public class Client {
         }
     }
     private void handleMedia (Socket client) {
+        Utils mediaUtils = new Utils(client);
 
+        try {
+            // send alllejdnaejkdklad
+            mediaUtils.sendObject(Login.toLogin(Constants.version, Constants.mediaPort, this.user.getEmail(), this.user.getPassword()));
+
+            this.isConnected = true;
+
+            String bucket = "";
+            StringBuilder rawMessage;
+
+            try {
+                while (true) {
+                    rawMessage = new StringBuilder();
+
+                    // receive packetObject
+                    do {
+                        // rawMessage will be the parsed packetObject and the bucket will be the next packetObject. Break the loop and parse :Sex_penis:
+                        if (!bucket.isEmpty()) {
+                            if (bucket.contains("\0")) {
+                                rawMessage = new StringBuilder(bucket.substring(0, bucket.indexOf('\0') + 1));
+                                bucket = bucket.substring(bucket.indexOf('\0') + 1);
+
+                                break;
+                            }
+                            else
+                                rawMessage.append(bucket);
+                        }
+
+                        int packet = mediaUtils.in.read(Constants.buffer);
+                        if (packet <= 0) // if the packet bytes count is less or equal to 0 then the client has disconnected, which means that the thread should be terminated
+                            throw new IOException("Client connection was abruptly interrupted");
+
+                        String temp = new String(Constants.buffer, 0, packet, Constants.encoding);
+
+                        // checks for the \0 in the temp
+                        int i = temp.indexOf('\0');
+                        if (i != -1) {
+                            rawMessage.append(temp, 0, i + 1);
+                            bucket = temp.substring(i + 1);
+
+                            break;
+                        }
+
+                        // tem que ter
+                        rawMessage.append(temp);
+                    } while (true);
+                    rawMessage = new StringBuilder(rawMessage.toString().replace("\0", ""));
+
+                    // get packet type
+                    PacketObject.Type packetType = this.getPacketType(rawMessage.toString());
+
+                    System.out.println(packetType);
+                    if (packetType == PacketObject.Type.File) {
+                        MediaFile media = MediaFile.fromString(rawMessage.toString());
+
+                        // notify file to listeners
+                        this.notifyFileToListeners(media);
+
+                        System.out.println(media.getFileType());
+                        switch (media.getFileType()) {
+                            case UPLOAD: {
+                                mediaUtils.out.write(new byte[1]); // separate the json from the actual data
+                                break;
+                            }
+                            case DOWNLOAD: {
+                                mediaUtils.out.write(new byte[1]); // separate the json from the actual data
+
+                                long progress = 0;
+                                int packet;
+
+                                System.out.println("filesize " + media.getSize());
+                                do {
+                                    packet = mediaUtils.in.read(Constants.buffer);
+                                    progress += packet; // increase progress with each packet size
+
+//                                outputStream.write(packet);
+                                } while (progress < media.getSize());
+
+                                System.out.println("done");
+
+//                              outputStream.close();
+                                break;
+                            }
+                            case PREVIEW: {
+                                break;
+                            }
+                        }
+                    }
+                    else if (packetType == PacketObject.Type.User) {
+                        User user = User.fromString(rawMessage.toString());
+
+                        // why would I need to redefine it?
+                    }
+                }
+            }
+            catch (Exception e) {
+                mediaUtils.close();
+
+                System.out.println("Exception in client");
+                System.out.println(e.getMessage());
+                e.printStackTrace();
+
+                this.user.setUsername("");
+                this.mainActivity.setLoginUsername("");
+                this.mainActivity.currentChatId = 0;
+
+                this.mainActivity.showCustomToast("Disconnected", Color.argb(90, 235, 64, 52));
+                this.mainActivity.getChatFragmentInstance().clearChat();
+
+                // just tell the user that the connection was closed
+                Message conMessage = Message.toMessage("Connection abruptly interrupted by the server", User.toUser(0, "Socket"));
+                this.notifyMessageToListeners(conMessage, false);
+
+                this.isConnected = false;
+            }
+        }
+        catch (Exception e) {
+            mediaUtils.close();
+
+            System.out.println(e.getMessage());
+
+            this.isConnected = false;
+        }
     }
 
     private void close () {
@@ -316,5 +446,18 @@ public class Client {
     private void notifyCommandToListeners (Command command) {
         for (ClientInterface listener : this.listeners)
             listener.onCommandReceived(command);
+    }
+    private void notifyAnimeToListeners (Anime anime) {
+        for (ClientInterface listener : this.listeners)
+            listener.onAnimeReceived(anime);
+    }
+    private void notifyFileToListeners (MediaFile mediaFile) {
+        for (ClientInterface listener : this.listeners)
+            listener.onFileReceived(mediaFile);
+    }
+
+    private PacketObject.Type getPacketType (String json) {
+        JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
+        return PacketObject.Type.valueOf(jsonObject.get("type").getAsString());
     }
 }

@@ -35,6 +35,7 @@ public class ServerInfoPopupFragment extends Fragment {
     private Bundle args;
 
     public ServerInfoPopupFragment() {
+        this.args = new Bundle();
     }
 
     @Override
@@ -104,7 +105,6 @@ public class ServerInfoPopupFragment extends Fragment {
                 String email = emailEdittext.getText().toString();
                 String password = passwordEdittext.getText().toString();
 
-                this.args = new Bundle();
                 this.args.putString("serverIp", serverIp);
                 this.args.putInt("serverPort", serverPort);
                 this.args.putString("email", email);

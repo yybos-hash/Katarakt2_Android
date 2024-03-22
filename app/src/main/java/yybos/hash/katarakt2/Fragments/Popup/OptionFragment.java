@@ -1,8 +1,6 @@
 package yybos.hash.katarakt2.Fragments.Popup;
 
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,15 +10,9 @@ import android.graphics.drawable.Drawable;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import org.jetbrains.annotations.Nullable;
 
-import yybos.hash.katarakt2.Fragments.ChatFragment;
-import yybos.hash.katarakt2.Fragments.ChatsFragment;
-import yybos.hash.katarakt2.Fragments.ViewAdapters.ChatsViewAdapter;
-import yybos.hash.katarakt2.MainActivity;
 import yybos.hash.katarakt2.R;
 
 public class OptionFragment extends Fragment {

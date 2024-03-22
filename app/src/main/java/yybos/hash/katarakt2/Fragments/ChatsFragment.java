@@ -32,13 +32,15 @@ import yybos.hash.katarakt2.Fragments.ViewAdapters.ChatsViewAdapter;
 import yybos.hash.katarakt2.MainActivity;
 import yybos.hash.katarakt2.R;
 import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
-import yybos.hash.katarakt2.Socket.Objects.Chat;
-import yybos.hash.katarakt2.Socket.Objects.Command;
-import yybos.hash.katarakt2.Socket.Objects.Message;
+import yybos.hash.katarakt2.Socket.Objects.Anime;
+import yybos.hash.katarakt2.Socket.Objects.Message.Chat;
+import yybos.hash.katarakt2.Socket.Objects.Message.Command;
+import yybos.hash.katarakt2.Socket.Objects.Media.MediaFile;
+import yybos.hash.katarakt2.Socket.Objects.Message.Message;
 
 public class ChatsFragment extends Fragment implements ClientInterface {
     private MainActivity mainActivityInstance;
-    private ChatFragment chatFragmentInstance;
+    private MessagesFragment messagesFragmentInstance;
 
     private ChatsViewAdapter chatsAdapter;
     private LinearLayout innerLinearLayout;
@@ -52,8 +54,8 @@ public class ChatsFragment extends Fragment implements ClientInterface {
     public ChatsFragment () {
 
     }
-    public ChatsFragment (ChatFragment instance) {
-        this.chatFragmentInstance = instance;
+    public ChatsFragment (MessagesFragment instance) {
+        this.messagesFragmentInstance = instance;
     }
 
     @Override
@@ -82,7 +84,7 @@ public class ChatsFragment extends Fragment implements ClientInterface {
         this.innerLinearLayout = root.findViewById(R.id.chatsInnerLinearLayout);
         this.constraintLayout = root.findViewById(R.id.chatsConstraintLayout);
 
-        this.chatsAdapter = new ChatsViewAdapter(chatFragmentInstance);
+        this.chatsAdapter = new ChatsViewAdapter(messagesFragmentInstance);
 
         RecyclerView recyclerView = root.findViewById(R.id.chatsRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -128,7 +130,7 @@ public class ChatsFragment extends Fragment implements ClientInterface {
         if (!this.mainActivityInstance.getClient().isConnected())
             this.progressBar.setVisibility(View.INVISIBLE);
 
-        this.chatFragmentInstance.getChats();
+        this.messagesFragmentInstance.getChats();
     }
 
     private void addNewChat () {
@@ -192,7 +194,7 @@ public class ChatsFragment extends Fragment implements ClientInterface {
             if (data == null || data.trim().isEmpty())
                 return;
 
-            ChatsFragment.this.chatFragmentInstance.createChat(data);
+            ChatsFragment.this.messagesFragmentInstance.createChat(data);
         });
 
         // add frame layout to constraintLayout
@@ -294,6 +296,16 @@ public class ChatsFragment extends Fragment implements ClientInterface {
                 this.addChat(chat);
             });
         }
+    }
+
+    @Override
+    public void onAnimeReceived(Anime anime) {
+
+    }
+
+    @Override
+    public void onFileReceived(MediaFile mediaFile) {
+
     }
 
     @Override

@@ -22,9 +22,11 @@ import yybos.hash.katarakt2.MainActivity;
 import yybos.hash.katarakt2.R;
 import yybos.hash.katarakt2.Socket.Client;
 import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
-import yybos.hash.katarakt2.Socket.Objects.Chat;
-import yybos.hash.katarakt2.Socket.Objects.Command;
-import yybos.hash.katarakt2.Socket.Objects.Message;
+import yybos.hash.katarakt2.Socket.Objects.Anime;
+import yybos.hash.katarakt2.Socket.Objects.Message.Chat;
+import yybos.hash.katarakt2.Socket.Objects.Message.Command;
+import yybos.hash.katarakt2.Socket.Objects.Media.MediaFile;
+import yybos.hash.katarakt2.Socket.Objects.Message.Message;
 
 public class TerminalFragment extends Fragment implements ClientInterface {
     private MainActivity mainActivityInstance;
@@ -82,7 +84,7 @@ public class TerminalFragment extends Fragment implements ClientInterface {
                     return true;
                 }
 
-                Command command = Command.toCommand(input.split(" ")[0], argsStr);
+                Command command = Command.prompt(argsStr);
                 client.sendCommand(command);
 
                 return true;
@@ -94,7 +96,7 @@ public class TerminalFragment extends Fragment implements ClientInterface {
     @Override
     public void onCommandReceived(Command command) {
         this.mainActivityInstance.runOnUiThread(() -> {
-            String output = this.textViewOutput.getText() + "\n" + command.getF();
+            String output = this.textViewOutput.getText() + "\n" + command.getString("output");
             this.textViewOutput.setText(output);
         });
     }
@@ -107,6 +109,16 @@ public class TerminalFragment extends Fragment implements ClientInterface {
     @Override
     public void onChatReceived(Chat chat) {
         //
+    }
+
+    @Override
+    public void onAnimeReceived(Anime anime) {
+
+    }
+
+    @Override
+    public void onFileReceived(MediaFile mediaFile) {
+
     }
 
     @Override

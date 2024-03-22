@@ -25,15 +25,16 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import yybos.hash.katarakt2.Fragments.ChatFragment;
+import yybos.hash.katarakt2.Fragments.AnimeFragment;
 import yybos.hash.katarakt2.Fragments.Custom.CustomToastFragment;
 import yybos.hash.katarakt2.Fragments.LoginFragment;
+import yybos.hash.katarakt2.Fragments.MessagesFragment;
 import yybos.hash.katarakt2.Fragments.SettingsFragment;
 import yybos.hash.katarakt2.Fragments.TerminalFragment;
 import yybos.hash.katarakt2.Socket.Client;
 import yybos.hash.katarakt2.Socket.Constants;
 import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
-import yybos.hash.katarakt2.Socket.Objects.Message;
+import yybos.hash.katarakt2.Socket.Objects.Message.Message;
 import yybos.hash.katarakt2.Socket.Objects.Server;
 
 public class MainActivity extends AppCompatActivity {
@@ -43,12 +44,13 @@ public class MainActivity extends AppCompatActivity {
     private FrameLayout buttonChat;
     private FrameLayout buttonSettings;
     private FrameLayout buttonLogin;
+    private FrameLayout buttonAnime;
 
     private Client client;
     private List<Message> messageHistory;
     private String loginUsername;
 
-    private ChatFragment chatFragmentInstance;
+    private MessagesFragment messagesFragmentInstance;
     private CustomToastFragment customToastInstance;
 
     public int currentChatId;
@@ -72,17 +74,20 @@ public class MainActivity extends AppCompatActivity {
         this.buttonChat = findViewById(R.id.activityButtonChat);
         this.buttonSettings = findViewById(R.id.activityButtonSettings);
         this.buttonLogin = findViewById(R.id.activityButtonLogin);
+        this.buttonAnime = findViewById(R.id.activityButtonAnime);
 
         this.selectedTab = null;
 
         this.buttonChat.setOnClickListener(this::tabPressed);
         this.buttonSettings.setOnClickListener(this::tabPressed);
         this.buttonLogin.setOnClickListener(this::tabPressed);
+        this.buttonAnime.setOnClickListener(this::tabPressed);
 
         this.messageHistory = new ArrayList<>();
 
         this.client = new Client(this);
 
+        // read default server and connect to it
         new Thread(() -> {
             String content = MainActivity.this.readFileFromInternalStorage(this, Constants.defaultServerFilename);
             if (content.isEmpty())
@@ -91,6 +96,8 @@ public class MainActivity extends AppCompatActivity {
             Server defaultServer = MainActivity.this.parseJsonString(content);
             MainActivity.this.client.tryConnection(defaultServer);
         }).start();
+
+        String[] requiredFiles = {"default_server.json", "servers_list.json", "default_chat.json"};
     }
 
     private void tabPressed (View view) {
@@ -98,26 +105,32 @@ public class MainActivity extends AppCompatActivity {
             return;
 
         if (view == this.buttonChat)
-            this.setFragment(new ChatFragment(), true);
+            this.setFragment(new MessagesFragment(), true);
 
         else if (view == this.buttonLogin)
             this.setFragment(new LoginFragment(), true);
 
         else if (view == this.buttonSettings)
             this.setFragment(new SettingsFragment(), true);
+
+        else if (view == this.buttonAnime)
+            this.setFragment(new AnimeFragment(), true);
     }
     public void moveSelectionTab (Fragment fragment) {
         View view;
 
-        if (fragment instanceof ChatFragment) {
+        if (fragment instanceof MessagesFragment) {
             view = this.buttonChat;
-            this.chatFragmentInstance = (ChatFragment) fragment;
+            this.messagesFragmentInstance = (MessagesFragment) fragment;
         }
         else if (fragment instanceof LoginFragment) {
             view = this.buttonLogin;
         }
         else if (fragment instanceof SettingsFragment) {
             view = this.buttonSettings;
+        }
+        else if (fragment instanceof AnimeFragment) {
+            view = this.buttonAnime;
         }
         else
             return;
@@ -152,13 +165,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void openTerminal () {
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        if (fragmentManager.isStateSaved())
-            return;
-
-        FragmentTransaction transaction = fragmentManager.beginTransaction();
-        transaction.replace(R.id.activityFragmentContainerView, new TerminalFragment());
-        transaction.commit();
+        this.setFragment(new TerminalFragment(), false);
     }
 
     // login and client
@@ -186,8 +193,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // fragments
-    public ChatFragment getChatFragmentInstance () {
-        return this.chatFragmentInstance;
+    public MessagesFragment getChatFragmentInstance () {
+        return this.messagesFragmentInstance;
     }
     public synchronized void showCustomToast (String message, int backgroundColor) {
         Bundle args = new Bundle();

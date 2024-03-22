@@ -5,7 +5,7 @@ import androidx.annotation.NonNull;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import java.sql.Date;
+import java.sql.Timestamp;
 
 // this one wont extend packetObject because it wont be sent over socket
 public class Server {
@@ -30,7 +30,7 @@ public class Server {
     @NonNull
     public static Server fromString (String json) {
         GsonBuilder gsonBuilder = new GsonBuilder();
-        gsonBuilder.registerTypeAdapter(Date.class, new ObjectDateDeserializer());
+        gsonBuilder.registerTypeAdapter(Timestamp.class, new ObjectDateDeserializer());
         //  Basically when gson formats a Date in the sql.Date format it changes the format, so this keeps the it as it should
 
         Gson parser = gsonBuilder.serializeNulls().create();

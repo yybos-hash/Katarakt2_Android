@@ -13,6 +13,8 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSerializer;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -23,6 +25,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
 
 import yybos.hash.katarakt2.Fragments.Custom.CustomSpinnerFragment;
 import yybos.hash.katarakt2.Fragments.Custom.Listeners.SpinnerListener;
@@ -31,9 +36,11 @@ import yybos.hash.katarakt2.MainActivity;
 import yybos.hash.katarakt2.R;
 import yybos.hash.katarakt2.Socket.Constants;
 import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
-import yybos.hash.katarakt2.Socket.Objects.Chat;
-import yybos.hash.katarakt2.Socket.Objects.Command;
-import yybos.hash.katarakt2.Socket.Objects.Message;
+import yybos.hash.katarakt2.Socket.Objects.Anime;
+import yybos.hash.katarakt2.Socket.Objects.Message.Chat;
+import yybos.hash.katarakt2.Socket.Objects.Message.Command;
+import yybos.hash.katarakt2.Socket.Objects.Media.MediaFile;
+import yybos.hash.katarakt2.Socket.Objects.Message.Message;
 
 public class ChatSetting extends Fragment implements ClientInterface, SpinnerListener {
     private MainActivity mainActivityInstance;
@@ -84,7 +91,7 @@ public class ChatSetting extends Fragment implements ClientInterface, SpinnerLis
                 return;
             }
 
-            Chat defaultChat = ChatSetting.this.parseJsonString(defaultChatJson);
+            Chat defaultChat = Chat.fromString(defaultChatJson);
             if (defaultChat == null)
                 return;
 
@@ -102,15 +109,11 @@ public class ChatSetting extends Fragment implements ClientInterface, SpinnerLis
     }
 
     @Override
-    public void onCommandReceived (Command command) {
-
-    }
+    public void onCommandReceived (Command command) {}
 
     // client listener
     @Override
-    public void onMessageReceived (Message message) {
-
-    }
+    public void onMessageReceived (Message message) {}
 
     @Override
     public void onChatReceived (Chat chat) {
@@ -126,6 +129,12 @@ public class ChatSetting extends Fragment implements ClientInterface, SpinnerLis
         }
     }
 
+    @Override
+    public void onAnimeReceived(Anime anime) {}
+
+    @Override
+    public void onFileReceived(MediaFile mediaFile) {}
+
     // spinner listener
     @Override
     public void onSpinnerExpand () {
@@ -135,8 +144,7 @@ public class ChatSetting extends Fragment implements ClientInterface, SpinnerLis
     }
 
     @Override
-    public void onSpinnerContract () {
-    }
+    public void onSpinnerContract () {}
 
     @Override
     public void onObjectSelected(Object object) {
@@ -151,8 +159,6 @@ public class ChatSetting extends Fragment implements ClientInterface, SpinnerLis
 
     // abubeblu
     public void writeToFile (Context context, Chat chat, String fileName) {
-        Gson gson = new Gson();
-
         try {
             // Open the file for writing
             FileOutputStream fileOutputStream = context.openFileOutput(fileName, Context.MODE_PRIVATE);
@@ -165,8 +171,17 @@ public class ChatSetting extends Fragment implements ClientInterface, SpinnerLis
                 return;
             }
 
+            //
+            SimpleDateFormat customDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
+
+            GsonBuilder gsonBuilder = new GsonBuilder();
+            gsonBuilder.registerTypeAdapter(Timestamp.class, (JsonSerializer<Timestamp>) (src, typeOfSrc, c) -> c.serialize(customDateFormat.format(src)));
+            //  Basically when gson formats a Date in the sql.Date format it changes the format, so this keeps the it as it should
+
+            Gson objParser = gsonBuilder.create();
+
             // Convert the list of servers to JSON and write it to the file
-            String jsonString = gson.toJson(chat);
+            String jsonString = objParser.toJson(chat);
             outputStreamWriter.write(jsonString);
 
             // Close the streams
@@ -180,7 +195,7 @@ public class ChatSetting extends Fragment implements ClientInterface, SpinnerLis
         StringBuilder content = new StringBuilder();
 
         try {
-            File serversFile = new File(context.getFilesDir(), Constants.serversListFilename);
+            File serversFile = new File(context.getFilesDir(), fileName);
             if (!serversFile.exists())
                 serversFile.createNewFile();
 
@@ -208,14 +223,5 @@ public class ChatSetting extends Fragment implements ClientInterface, SpinnerLis
         }
 
         return content.toString();
-    }
-    public Chat parseJsonString (String jsonString) {
-        if (jsonString.isEmpty())
-            return null;
-
-        Gson gson = new Gson();
-
-        // Deserialize the JSON string into a list of Server objects
-        return gson.fromJson(jsonString, Chat.class);
     }
 }

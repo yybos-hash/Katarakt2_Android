@@ -119,16 +119,14 @@ public class LoginFragment extends Fragment {
         FrameLayout generalFrameLayout = new FrameLayout(this.requireContext());
         generalFrameLayout.setId(View.generateViewId());
         generalFrameLayout.setOnClickListener(view -> {
-            ValueAnimator frameFadeOut = ValueAnimator.ofInt(100, 0);
-            frameFadeOut.setDuration(200);
-            frameFadeOut.addUpdateListener((animator) -> {
-                int value = (int) animator.getAnimatedValue();
-                generalFrameLayout.setBackgroundColor(Color.argb(value, 0, 0, 0));
-            });
-            frameFadeOut.start();
+            ServerInfoPopupFragment infoPopupFragment = (ServerInfoPopupFragment) getParentFragmentManager().findFragmentByTag(resultKey);
 
-            this.closeInfo(resultKey);
+            if (infoPopupFragment == null)
+                return;
+
+            infoPopupFragment.destroy();
         });
+
         ValueAnimator frameFadeIn = ValueAnimator.ofInt(0, 100);
         frameFadeIn.setDuration(200);
         frameFadeIn.addUpdateListener((animator) -> {
@@ -149,19 +147,24 @@ public class LoginFragment extends Fragment {
 
         // initiate fragment manager
         FragmentTransaction fragmentManager = getParentFragmentManager().beginTransaction();
-        fragmentManager.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out);
+        fragmentManager.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out, R.anim.fragment_fade_in, R.anim.fragment_fade_out);
         fragmentManager.add(generalFrameLayout.getId(), serverInfoPopupFragment, resultKey);
         fragmentManager.commit();
 
         getParentFragmentManager().setFragmentResultListener(resultKey, this, (resKey, result) -> {
+            this.closeInfo(resultKey);
+
             Server server = new Server();
             server.serverIp = result.getString("serverIp");
             server.serverPort = result.getInt("serverPort");
             server.email = result.getString("email");
             server.password = result.getString("password");
 
+            if (server.serverIp == null || server.email == null || server.serverPort == -1) {
+                return;
+            }
+
             this.addServer(server);
-            this.closeInfo(resKey);
 
             // apply changes to serversList
             this.writeServersToFile(getContext(), this.serverAdapter.getServers(), Constants.serversListFilename);
@@ -265,7 +268,7 @@ public class LoginFragment extends Fragment {
         FrameLayout generalFrameLayout = (FrameLayout) infoPopupView.getParent();
 
         ValueAnimator frameFadeOut = ValueAnimator.ofInt(100, 0);
-        frameFadeOut.setDuration(150);
+        frameFadeOut.setDuration(200);
         frameFadeOut.addUpdateListener((animator) -> {
             int value = (int) animator.getAnimatedValue();
             generalFrameLayout.setBackgroundColor(Color.argb(value, 0, 0, 0));

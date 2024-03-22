@@ -12,6 +12,7 @@
         android:background="@drawable/login_shape"
         android:orientation="vertical"
         android:padding="30dp"
+        android:clickable="true"
         android:gravity="center"
         android:layout_gravity="center_horizontal"
         app:layout_constraintEnd_toEndOf="parent"

@@ -10,6 +10,7 @@
         android:background="@drawable/input_popup_shape"
         android:orientation="vertical"
         android:gravity="center"
+        android:clickable="true"
         android:padding="25dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

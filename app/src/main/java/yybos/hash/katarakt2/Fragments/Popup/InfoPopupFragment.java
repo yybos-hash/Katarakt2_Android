@@ -5,7 +5,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -14,8 +13,6 @@ import androidx.fragment.app.FragmentTransaction;
 
 import org.jetbrains.annotations.Nullable;
 
-import yybos.hash.katarakt2.Fragments.ChatFragment;
-import yybos.hash.katarakt2.MainActivity;
 import yybos.hash.katarakt2.R;
 
 public class InfoPopupFragment extends Fragment {

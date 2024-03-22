@@ -23,8 +23,6 @@ import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.gson.Gson;
-
 import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
@@ -36,30 +34,32 @@ import java.util.List;
 
 import yybos.hash.katarakt2.Fragments.Popup.InfoPopupFragment;
 import yybos.hash.katarakt2.Fragments.Popup.InputPopupFragment;
-import yybos.hash.katarakt2.Fragments.ViewAdapters.ChatViewAdapter;
+import yybos.hash.katarakt2.Fragments.ViewAdapters.MessagesViewAdapter;
 import yybos.hash.katarakt2.MainActivity;
 import yybos.hash.katarakt2.R;
 import yybos.hash.katarakt2.Socket.Client;
 import yybos.hash.katarakt2.Socket.Constants;
 import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
-import yybos.hash.katarakt2.Socket.Objects.Chat;
-import yybos.hash.katarakt2.Socket.Objects.Command;
-import yybos.hash.katarakt2.Socket.Objects.Message;
-import yybos.hash.katarakt2.Socket.Objects.User;
+import yybos.hash.katarakt2.Socket.Objects.Anime;
+import yybos.hash.katarakt2.Socket.Objects.Media.MediaFile;
+import yybos.hash.katarakt2.Socket.Objects.Message.Chat;
+import yybos.hash.katarakt2.Socket.Objects.Message.Command;
+import yybos.hash.katarakt2.Socket.Objects.Message.Message;
+import yybos.hash.katarakt2.Socket.Objects.Message.User;
 
-public class ChatFragment extends Fragment implements ClientInterface {
+public class MessagesFragment extends Fragment implements ClientInterface {
     private ConstraintLayout constraintLayout;
 
     private EditText editText;
     private RecyclerView recyclerView;
 
-    private ChatViewAdapter chatAdapter;
+    private MessagesViewAdapter chatAdapter;
     private List<Message> history;
 
     private MainActivity mainActivityInstance;
     private Client client;
 
-    public ChatFragment() {
+    public MessagesFragment() {
         // Required empty public constructor
     }
 
@@ -71,7 +71,7 @@ public class ChatFragment extends Fragment implements ClientInterface {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_chat, container, false);
+        return inflater.inflate(R.layout.fragment_messages, container, false);
     }
 
     @Override
@@ -91,6 +91,9 @@ public class ChatFragment extends Fragment implements ClientInterface {
         // get message history if there are any messages previously sent
         this.history = this.mainActivityInstance.getMessageHistory();
 
+        // client will send message with a timestamp to the server, server generated id in the database and returns message, if message has the same timestamp as any other message in this
+        // list, then the message was sent succesfully. This has a tiny, very little, overhead
+
         // listen to incoming messages
         this.mainActivityInstance.addClientListener(this);
 
@@ -102,26 +105,27 @@ public class ChatFragment extends Fragment implements ClientInterface {
         ImageView chatsButton = root.findViewById(R.id.chatChatsButton);
         ImageView sendButton = root.findViewById(R.id.chatSendButton);
 
-        this.chatAdapter = new ChatViewAdapter(this.history);
+        this.chatAdapter = new MessagesViewAdapter(this.requireContext(), this.history);
+        this.chatAdapter.setHasStableIds(true);
 
         chatsButton.setOnClickListener(this::displayChatsList);
         sendButton.setOnClickListener(this::sendMessage);
         this.editText.setOnFocusChangeListener((v, focused) -> {
             if (focused) {
-                if (ChatFragment.this.client == null || !ChatFragment.this.client.isConnected()) {
+                if (MessagesFragment.this.client == null || !MessagesFragment.this.client.isConnected()) {
                     v.clearFocus();
                     this.displayInfo(
                         "Hold Up!",
                         "You not connected = you not send message",
                         "Alright, smart boy",
                         "Bet",
-                        (resultkey, result) -> ChatFragment.this.closeInfoPopup(resultkey)
+                        (resultkey, result) -> MessagesFragment.this.closeInfoPopup(resultkey)
                     );
                     return;
                 }
 
-                if (ChatFragment.this.mainActivityInstance.currentChatId <= 0) {
-                    ChatFragment.this.mainActivityInstance.showCustomToast("No chat selected", Color.argb(90, 235, 64, 52));
+                if (MessagesFragment.this.mainActivityInstance.currentChatId <= 0) {
+                    MessagesFragment.this.mainActivityInstance.showCustomToast("No chat selected", Color.argb(90, 235, 64, 52));
                 }
             }
         });
@@ -144,10 +148,10 @@ public class ChatFragment extends Fragment implements ClientInterface {
                     int button = result.getInt("button");
 
                     if (button == 0) {
-                        ChatFragment.this.mainActivityInstance.showCustomToast("Fuck you", Color.argb(90, 235, 64, 52));
+                        MessagesFragment.this.mainActivityInstance.showCustomToast("Fuck you", Color.argb(90, 235, 64, 52));
                     }
 
-                    ChatFragment.this.closeInfoPopup(resultKey);
+                    MessagesFragment.this.closeInfoPopup(resultKey);
                 }
             );
         }
@@ -162,7 +166,7 @@ public class ChatFragment extends Fragment implements ClientInterface {
             if (chatJson.isEmpty())
                 return;
 
-            Chat defaultChat = this.parseJsonString(chatJson);
+            Chat defaultChat = Chat.fromString(chatJson);
 
             if (this.client.isConnected() && this.mainActivityInstance.currentChatId == 0)
                 this.updateMessageHistory(defaultChat.getId());
@@ -185,12 +189,13 @@ public class ChatFragment extends Fragment implements ClientInterface {
             return;
         }
 
-        Message message = Message.toMessage(content, this.mainActivityInstance.currentChatId, this.client.user);
+        Message message = Message.toMessage(content, this.mainActivityInstance.currentChatId, this.client.user.getUsername());
 
-        if (ChatFragment.this.mainActivityInstance.currentChatId > 0) {
+        // if the chat id is valid
+        if (MessagesFragment.this.mainActivityInstance.currentChatId > 0) {
             this.client.sendMessage(message);
             this.chatAdapter.addMessage(message);
-            this.history.add(message);
+            // this.history.add(message); for some reason this thing is duplicating messages
         }
 
         this.scrollToLastMessage();
@@ -220,7 +225,7 @@ public class ChatFragment extends Fragment implements ClientInterface {
         FrameLayout generalFrameLayout = this.createFrameLayout();
         generalFrameLayout.setOnClickListener(view -> {
             // this will trigger the resultListener by calling the destroy method in the chatsFragment
-            ChatFragment.this.closeChats();
+            MessagesFragment.this.closeChats();
         });
 
         ValueAnimator frameFadeIn = ValueAnimator.ofInt(0, 100);
@@ -252,7 +257,7 @@ public class ChatFragment extends Fragment implements ClientInterface {
                     super.onAnimationEnd(animation);
 
                     generalFrameLayout.removeAllViews();
-                    ChatFragment.this.constraintLayout.removeView(generalFrameLayout);
+                    MessagesFragment.this.constraintLayout.removeView(generalFrameLayout);
                 }
             });
             frameFadeOut.start();
@@ -282,6 +287,7 @@ public class ChatFragment extends Fragment implements ClientInterface {
             infoPopupFragment.destroy();
         });
         generalFrameLayout.setZ(this.constraintLayout.getChildCount() + 15);
+
         ValueAnimator frameFadeIn = ValueAnimator.ofInt(0, 100);
         frameFadeIn.setDuration(200);
         frameFadeIn.addUpdateListener((animator) -> {
@@ -343,12 +349,12 @@ public class ChatFragment extends Fragment implements ClientInterface {
             });
             frameFadeOut.start();
 
-            String data = ChatFragment.this.client.getClientIp();
+            String data = MessagesFragment.this.client.getClientIp();
 
-            User newUser = User.toUser(ChatFragment.this.mainActivityInstance.getClient().user.getId(), data, null, null);
+            User newUser = User.toUser(MessagesFragment.this.mainActivityInstance.getClient().user.getId(), data, null, null);
 
-            ChatFragment.this.mainActivityInstance.setLoginUsername(data);
-            ChatFragment.this.chatAdapter.updateUsername(newUser);
+            MessagesFragment.this.mainActivityInstance.setLoginUsername(data);
+            MessagesFragment.this.chatAdapter.updateUsername(newUser);
         });
 
         ValueAnimator frameFadeIn = ValueAnimator.ofInt(0, 100);
@@ -371,7 +377,6 @@ public class ChatFragment extends Fragment implements ClientInterface {
 
         // initiate fragment manager
         FragmentTransaction fragmentManager = getParentFragmentManager().beginTransaction();
-
         fragmentManager.setCustomAnimations(R.anim.fragment_fade_in, R.anim.fragment_fade_out, R.anim.fragment_fade_in, R.anim.fragment_fade_out);
         fragmentManager.add(generalFrameLayout.getId(), inputPopupFragment, resultKey);
         fragmentManager.commit();
@@ -379,26 +384,26 @@ public class ChatFragment extends Fragment implements ClientInterface {
         getParentFragmentManager().setFragmentResultListener(resultKey, this, (requestKey, result) -> {
             String data = result.getString("inputResult");
 
-            ChatFragment.this.closeInputPopup(resultKey);
+            MessagesFragment.this.closeInputPopup(resultKey);
 
             if (data == null)
                 return;
 
             if (data.trim().isEmpty())
-                data = ChatFragment.this.client.getClientIp();
+                data = MessagesFragment.this.client.getClientIp();
             else
-                ChatFragment.this.mainActivityInstance.getClient().updateUsername(data);
+                MessagesFragment.this.mainActivityInstance.getClient().updateUsername(data);
 
-            User newUser = User.toUser(ChatFragment.this.mainActivityInstance.getClient().user.getId(), data, null, null);
+            User newUser = User.toUser(MessagesFragment.this.mainActivityInstance.getClient().user.getId(), data, null, null);
 
-            ChatFragment.this.mainActivityInstance.setLoginUsername(data);
-            ChatFragment.this.chatAdapter.updateUsername(newUser);
+            MessagesFragment.this.mainActivityInstance.setLoginUsername(data);
+            MessagesFragment.this.chatAdapter.updateUsername(newUser);
         });
 
         // frame layout is already added to the screen
     }
 
-    public void closeChats() {
+    public void closeChats () {
         ChatsFragment chatsFragment = (ChatsFragment) getParentFragmentManager().findFragmentByTag("chatsFragmentInstance");
 
         if (chatsFragment == null)
@@ -429,13 +434,12 @@ public class ChatFragment extends Fragment implements ClientInterface {
             @Override
             public void onAnimationEnd(Animator animation) {
                 generalFrameLayout.removeAllViews();
-                ChatFragment.this.constraintLayout.removeView(generalFrameLayout);
+                MessagesFragment.this.constraintLayout.removeView(generalFrameLayout);
 
                 super.onAnimationEnd(animation);
             }
         });
         frameFadeOut.start();
-
     }
     public void closeInputPopup (String tag) {
         InputPopupFragment inputPopupFragment = (InputPopupFragment) getParentFragmentManager().findFragmentByTag(tag);
@@ -460,7 +464,7 @@ public class ChatFragment extends Fragment implements ClientInterface {
             @Override
             public void onAnimationEnd(Animator animation) {
                 generalFrameLayout.removeAllViews();
-                ChatFragment.this.constraintLayout.removeView(generalFrameLayout);
+                MessagesFragment.this.constraintLayout.removeView(generalFrameLayout);
 
                 super.onAnimationEnd(animation);
             }
@@ -476,30 +480,48 @@ public class ChatFragment extends Fragment implements ClientInterface {
         super.onDestroyView();
     }
 
+    // events
     @Override
-    public void onCommandReceived(Command command) {
+    public void onCommandReceived (Command command) {
 
     }
-
-    // events
     @Override
     public void onMessageReceived (Message message) {
         // if it's inside the main thread
         if (Looper.myLooper() == Looper.getMainLooper()) {
-            this.chatAdapter.addMessage(message);
+            this.chatAdapter.addMessage(message); // check to see if this message is inside unsentMessages
             this.scrollToLastMessage();
         }
         else {
             // Call a function on the UI thread
             mainActivityInstance.runOnUiThread(() -> {
-                this.chatAdapter.addMessage(message);
+                this.chatAdapter.addMessage(message); // this one too
                 this.scrollToLastMessage();
             });
         }
     }
     @Override
-    public void onChatReceived(Chat chat) {
+    public void onChatReceived (Chat chat) {
         // chatFragment doesnt have anything to do with chats
+    }
+    @Override
+    public void onAnimeReceived (Anime anime) {
+
+    }
+    @Override
+    public void onFileReceived (MediaFile mediaFile) {
+        // if it's inside the main thread
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            this.chatAdapter.addFile(mediaFile);
+            this.scrollToLastMessage();
+        }
+        else {
+            // Call a function on the UI thread
+            mainActivityInstance.runOnUiThread(() -> {
+                this.chatAdapter.addFile(mediaFile);
+                this.scrollToLastMessage();
+            });
+        }
     }
 
     // shits
@@ -543,22 +565,26 @@ public class ChatFragment extends Fragment implements ClientInterface {
     public void createChat (String name) {
         this.client.sendCommand(Command.createChat(name));
     }
-    public void deleteChat(int id) {
+    public void deleteChat (int id) {
         this.client.sendCommand(Command.deleteChat(id));
     }
 
-    public int getCurrentChatId() {
+    public int getCurrentChatId () {
         return this.mainActivityInstance.currentChatId;
     }
 
     // default chat
-    public String readFileFromInternalStorage(Context context, String fileName) {
+    public String readFileFromInternalStorage (Context context, String fileName) {
         StringBuilder content = new StringBuilder();
 
         try {
-            File serversFile = new File(context.getFilesDir(), Constants.serversListFilename);
-            if (!serversFile.exists())
-                serversFile.createNewFile();
+            File serversFile = new File(context.getFilesDir(), fileName);
+
+            if (!serversFile.exists()) {
+                if (!serversFile.createNewFile()) {
+                    return "";
+                }
+            }
 
             // Open the file for reading
             FileInputStream fileInputStream = context.openFileInput(fileName);
@@ -584,14 +610,5 @@ public class ChatFragment extends Fragment implements ClientInterface {
         }
 
         return content.toString();
-    }
-    public Chat parseJsonString(String jsonString) {
-        if (jsonString.isEmpty())
-            return null;
-
-        Gson gson = new Gson();
-
-        // Deserialize the JSON string into a list of Server objects
-        return gson.fromJson(jsonString, Chat.class);
     }
 }
