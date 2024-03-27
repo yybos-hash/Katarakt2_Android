@@ -128,7 +128,7 @@ public class LoginFragment extends Fragment {
         });
 
         ValueAnimator frameFadeIn = ValueAnimator.ofInt(0, 100);
-        frameFadeIn.setDuration(200);
+        frameFadeIn.setDuration(150);
         frameFadeIn.addUpdateListener((animator) -> {
             int value = (int) animator.getAnimatedValue();
             generalFrameLayout.setBackgroundColor(Color.argb(value, 0, 0, 0));
@@ -186,18 +186,15 @@ public class LoginFragment extends Fragment {
         FrameLayout generalFrameLayout = new FrameLayout(this.requireContext());
         generalFrameLayout.setId(View.generateViewId());
         generalFrameLayout.setOnClickListener(view -> {
-            ValueAnimator frameFadeOut = ValueAnimator.ofInt(100, 0);
-            frameFadeOut.setDuration(200);
-            frameFadeOut.addUpdateListener((animator) -> {
-                int value = (int) animator.getAnimatedValue();
-                generalFrameLayout.setBackgroundColor(Color.argb(value, 0, 0, 0));
-            });
-            frameFadeOut.start();
+            ServerInfoPopupFragment infoPopupFragment = (ServerInfoPopupFragment) getParentFragmentManager().findFragmentByTag(resultKey);
 
-            this.closeInfo(resultKey);
+            if (infoPopupFragment == null)
+                return;
+
+            infoPopupFragment.destroy();
         });
         ValueAnimator frameFadeIn = ValueAnimator.ofInt(0, 100);
-        frameFadeIn.setDuration(200);
+        frameFadeIn.setDuration(150);
         frameFadeIn.addUpdateListener((animator) -> {
             int value = (int) animator.getAnimatedValue();
             generalFrameLayout.setBackgroundColor(Color.argb(value, 0, 0, 0));
@@ -223,6 +220,8 @@ public class LoginFragment extends Fragment {
         fragmentManager.commit();
 
         getParentFragmentManager().setFragmentResultListener(resultKey, this, (resKey, result) -> {
+            this.closeInfo(resKey);
+
             Server server = new Server();
             server.serverIp = result.getString("serverIp");
             server.serverPort = result.getInt("serverPort");
@@ -230,10 +229,13 @@ public class LoginFragment extends Fragment {
             server.password = result.getString("password");
             server.isDefault = viewHolder.serverInfo.isDefault;
 
+            if (server.serverIp == null || server.email == null || server.serverPort == -1) {
+                return;
+            }
+
             viewHolder.setInfo(server);
 
             this.saveInfo(viewHolder);
-            this.closeInfo(resKey);
         });
 
         // add frame layout to constraintLayout

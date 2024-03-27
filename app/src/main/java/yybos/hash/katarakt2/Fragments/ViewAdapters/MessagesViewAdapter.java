@@ -16,6 +16,7 @@ import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
 
+import yybos.hash.katarakt2.Fragments.MessagesFragment;
 import yybos.hash.katarakt2.Fragments.ViewHolders.FileViewHolder;
 import yybos.hash.katarakt2.Fragments.ViewHolders.MessageViewHolder;
 import yybos.hash.katarakt2.R;
@@ -26,12 +27,13 @@ import yybos.hash.katarakt2.Socket.Objects.PacketObject;
 
 public class MessagesViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private List<PacketObject> objects = new ArrayList<>();
-    private final List<Message> unsentMessages;
+    private final List<Message> unsentMessages = new ArrayList<>();
     private final Context context; // we need this shit
+    private final MessagesFragment fragment;
 
-    public MessagesViewAdapter (Context context, List<Message> history) {
-        this.unsentMessages = new ArrayList<>();
-        this.context = context;
+    public MessagesViewAdapter (MessagesFragment fragment, List<PacketObject> history) {
+        this.context = fragment.requireContext();
+        this.fragment = fragment;
 
         if (history != null && !history.isEmpty()) {
             this.objects = new ArrayList<>(history);
@@ -39,27 +41,25 @@ public class MessagesViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     }
 
     public void addMessage (Message message) {
-        if (message.getId() != -1) {
-            for (Message unsentMessage : this.unsentMessages) {
-                // checks if the timestamps are equal
-                if (unsentMessage.getDate() == message.getDate()) {
-                    if (!this.objects.contains(unsentMessage)) // if the objects doesnt have this key (this should not happen)
-                        break;
+        for (Message unsentMessage : this.unsentMessages) {
+            // checks if the timestamps are equal
+            if (unsentMessage.getDate() == message.getDate()) {
+                if (!this.objects.contains(unsentMessage)) // if the objects doesnt have this key (this should not happen)
+                    break;
 
-                    // notify the item change to update the view
-                    for (int i = this.objects.size() - 1; i > 0; i--) {
-                        PacketObject packetObject = this.objects.get(i);
+                // notify the item change to update the view
+                for (int i = this.objects.size() - 1; i > 0; i--) {
+                    PacketObject packetObject = this.objects.get(i);
 
-                        if (packetObject.getDate() == message.getDate()) {
-                            packetObject.setId(message.getId());
-                            notifyItemChanged(i);
-                        }
+                    if (packetObject.getDate() == message.getDate()) {
+                        packetObject.setId(message.getId());
+                        notifyItemChanged(i);
                     }
-
-                    // remove from the unsent messages
-                    this.unsentMessages.remove(unsentMessage);
-                    return;
                 }
+
+                // remove from the unsent messages
+                this.unsentMessages.remove(unsentMessage);
+                return;
             }
         }
 
@@ -79,7 +79,7 @@ public class MessagesViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         for (int i = 0; i < this.objects.size(); i++) {
             PacketObject object = this.objects.get(i);
 
-            if (object.getType() == PacketObject.Type.Message) {
+            if (object.getType() == PacketObject.Type.Message.getValue()) {
                 Message message = (Message) object;
 
                 if (message.getUser().getId() == user.getId()) {
@@ -87,7 +87,7 @@ public class MessagesViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                     notifyItemChanged(i);
                 }
             }
-            else if (object.getType() == PacketObject.Type.File) {
+            else if (object.getType() == PacketObject.Type.File.getValue()) {
                 MediaFile file = (MediaFile) object;
 
                 if (file.getUser().getId() == user.getId()) {
@@ -105,35 +105,33 @@ public class MessagesViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
     @Override
     public int getItemViewType (int position) {
-        PacketObject.Type objectType = this.objects.get(position).getType();
+        PacketObject.Type objectType = PacketObject.Type.getEnumByValue(this.objects.get(position).getType());
 
         switch (objectType) {
-            case Message: {
-                return PacketObject.Type.Message.getValue();
-            }
             case File: {
                 return PacketObject.Type.File.getValue();
             }
+            // by default it will return Message
+            case Message:
+            default: {
+                return PacketObject.Type.Message.getValue();
+            }
         }
-
-        // Add more conditions for additional view types
-        return super.getItemViewType(position);
     }
 
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder (@NonNull ViewGroup parent, int viewType) {
         switch (PacketObject.Type.getEnumByValue(viewType)) {
-            case Message: {
-                View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.layout_message, parent, false);
-                return new MessageViewHolder(itemView);
-            }
             case File: {
                 View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.layout_file, parent, false);
                 return new FileViewHolder(itemView);
             }
+            // by default it is a Message
+            case Message:
             default: {
-                return null;
+                View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.layout_message, parent, false);
+                return new MessageViewHolder(itemView);
             }
         }
     }
@@ -142,7 +140,7 @@ public class MessagesViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     public void onBindViewHolder (@NonNull RecyclerView.ViewHolder holder, int position) {
         PacketObject object = this.objects.get(position);
 
-        switch (object.getType()) {
+        switch (PacketObject.Type.getEnumByValue(object.getType())) {
             case Message: {
                 Message message = (Message) object;
                 MessageViewHolder messageViewHolder = new MessageViewHolder(holder.itemView);
@@ -162,11 +160,12 @@ public class MessagesViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 FileViewHolder fileViewHolder = new FileViewHolder(holder.itemView);
 
                 fileViewHolder.username.setText(mediaFile.getUser().getUsername());
-                fileViewHolder.date.setText(String.valueOf(mediaFile.getDate()));
+                fileViewHolder.date.setText(new Date(mediaFile.getDate()).toString());
                 fileViewHolder.filename.setText(mediaFile.getFilename());
 
-                fileViewHolder.file = mediaFile;
-                fileViewHolder.user = mediaFile.getUser();
+                fileViewHolder.downloadImage.setOnClickListener((v) -> {
+                    MessagesViewAdapter.this.fragment.downloadFile(mediaFile);
+                });
 
                 break;
             }
@@ -174,7 +173,7 @@ public class MessagesViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     }
 
     @Override
-    public long getItemId(int position) {
+    public long getItemId (int position) {
         // Retrieve the data item at the specified position
         PacketObject item = this.objects.get(position);
 

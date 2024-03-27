@@ -173,7 +173,7 @@ public class AnimeViewAdapter extends RecyclerView.Adapter<AnimeViewHolder> {
     }
 
     @Override
-    public long getItemId(int position) {
+    public long getItemId (int position) {
         // Retrieve the data item at the specified position
         Anime item = this.animeList.get(position);
 

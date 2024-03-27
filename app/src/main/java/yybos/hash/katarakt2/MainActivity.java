@@ -27,6 +27,7 @@ import java.util.List;
 
 import yybos.hash.katarakt2.Fragments.AnimeFragment;
 import yybos.hash.katarakt2.Fragments.Custom.CustomToastFragment;
+import yybos.hash.katarakt2.Fragments.FolderFragment;
 import yybos.hash.katarakt2.Fragments.LoginFragment;
 import yybos.hash.katarakt2.Fragments.MessagesFragment;
 import yybos.hash.katarakt2.Fragments.SettingsFragment;
@@ -34,7 +35,7 @@ import yybos.hash.katarakt2.Fragments.TerminalFragment;
 import yybos.hash.katarakt2.Socket.Client;
 import yybos.hash.katarakt2.Socket.Constants;
 import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
-import yybos.hash.katarakt2.Socket.Objects.Message.Message;
+import yybos.hash.katarakt2.Socket.Objects.PacketObject;
 import yybos.hash.katarakt2.Socket.Objects.Server;
 
 public class MainActivity extends AppCompatActivity {
@@ -45,9 +46,10 @@ public class MainActivity extends AppCompatActivity {
     private FrameLayout buttonSettings;
     private FrameLayout buttonLogin;
     private FrameLayout buttonAnime;
+    private FrameLayout buttonFolder;
 
     private Client client;
-    private List<Message> messageHistory;
+    private List<PacketObject> messageHistory;
     private String loginUsername;
 
     private MessagesFragment messagesFragmentInstance;
@@ -75,6 +77,7 @@ public class MainActivity extends AppCompatActivity {
         this.buttonSettings = findViewById(R.id.activityButtonSettings);
         this.buttonLogin = findViewById(R.id.activityButtonLogin);
         this.buttonAnime = findViewById(R.id.activityButtonAnime);
+        this.buttonFolder = findViewById(R.id.activityButtonFolder);
 
         this.selectedTab = null;
 
@@ -82,6 +85,7 @@ public class MainActivity extends AppCompatActivity {
         this.buttonSettings.setOnClickListener(this::tabPressed);
         this.buttonLogin.setOnClickListener(this::tabPressed);
         this.buttonAnime.setOnClickListener(this::tabPressed);
+        this.buttonFolder.setOnClickListener(this::tabPressed);
 
         this.messageHistory = new ArrayList<>();
 
@@ -96,8 +100,6 @@ public class MainActivity extends AppCompatActivity {
             Server defaultServer = MainActivity.this.parseJsonString(content);
             MainActivity.this.client.tryConnection(defaultServer);
         }).start();
-
-        String[] requiredFiles = {"default_server.json", "servers_list.json", "default_chat.json"};
     }
 
     private void tabPressed (View view) {
@@ -115,6 +117,9 @@ public class MainActivity extends AppCompatActivity {
 
         else if (view == this.buttonAnime)
             this.setFragment(new AnimeFragment(), true);
+
+        else if (view == this.buttonFolder)
+            this.setFragment(new FolderFragment(), true);
     }
     public void moveSelectionTab (Fragment fragment) {
         View view;
@@ -131,6 +136,9 @@ public class MainActivity extends AppCompatActivity {
         }
         else if (fragment instanceof AnimeFragment) {
             view = this.buttonAnime;
+        }
+        else if (fragment instanceof FolderFragment) {
+            view = this.buttonFolder;
         }
         else
             return;
@@ -177,7 +185,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // histories
-    public List<Message> getMessageHistory () {
+    public List<PacketObject> getMessageHistory () {
         return this.messageHistory;
     }
 

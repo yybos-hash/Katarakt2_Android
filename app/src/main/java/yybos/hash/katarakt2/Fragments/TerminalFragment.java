@@ -23,6 +23,7 @@ import yybos.hash.katarakt2.R;
 import yybos.hash.katarakt2.Socket.Client;
 import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
 import yybos.hash.katarakt2.Socket.Objects.Anime;
+import yybos.hash.katarakt2.Socket.Objects.Media.Directory;
 import yybos.hash.katarakt2.Socket.Objects.Message.Chat;
 import yybos.hash.katarakt2.Socket.Objects.Message.Command;
 import yybos.hash.katarakt2.Socket.Objects.Media.MediaFile;
@@ -118,6 +119,11 @@ public class TerminalFragment extends Fragment implements ClientInterface {
 
     @Override
     public void onFileReceived(MediaFile mediaFile) {
+
+    }
+
+    @Override
+    public void onDirectoryReceived(Directory directory) {
 
     }
 

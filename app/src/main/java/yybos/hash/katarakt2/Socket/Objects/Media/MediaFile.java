@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import java.io.File;
+import java.net.URLConnection;
 import java.sql.Date;
 
 import yybos.hash.katarakt2.Socket.Objects.Message.User;
@@ -14,7 +15,8 @@ public class MediaFile extends PacketObject {
     private String path;
     private String filename;
     private long size;
-    private MediaFileType mediaFileType;
+    private MediaProcessType mediaProcessType;
+    private String mime;
 
     private User user = new User();
 
@@ -31,18 +33,29 @@ public class MediaFile extends PacketObject {
     public String getFileExtension () {
         return this.getFilename().split("\\.")[this.getFilename().split("\\.").length - 1];
     }
-    public MediaFileType getFileType () {
-        return this.mediaFileType;
+    public MediaProcessType getProcessType () {
+        return this.mediaProcessType;
     }
 
     public File toFile () {
         return new File(this.path);
     }
-    public static MediaFile toMediaFile (Type type, String path, long size, MediaFileType mediaFileType) {
+    public static MediaFile toMediaFile (Type type, String path, long size, MediaProcessType mediaProcessType) {
         MediaFile from = new MediaFile();
-        from.type = type;
-        from.mediaFileType = mediaFileType;
+        from.type = type.getValue();
+        from.mediaProcessType = mediaProcessType;
         from.size = size;
+        from.path = path.replace("\\", "/");
+        from.filename = from.path.split("/")[from.path.split("/").length - 1];
+        from.date = System.currentTimeMillis();
+
+        return from;
+    }
+    public static MediaFile toMediaFile (String path, MediaProcessType mediaProcessType) {
+        MediaFile from = new MediaFile();
+        from.type = Type.File.getValue();
+        from.mediaProcessType = mediaProcessType;
+        // from.size = new File(path).length();
         from.path = path.replace("\\", "/");
         from.filename = from.path.split("/")[from.path.split("/").length - 1];
         from.date = System.currentTimeMillis();
@@ -73,7 +86,15 @@ public class MediaFile extends PacketObject {
         this.user = user;
     }
 
-    public enum MediaFileType {
+    public String getMimeType () {
+        return URLConnection.guessContentTypeFromName(this.filename);
+    }
+
+    public void setProcessType (MediaProcessType type) {
+        this.mediaProcessType = type;
+    }
+
+    public enum MediaProcessType {
         UPLOAD,
         DOWNLOAD,
         PREVIEW

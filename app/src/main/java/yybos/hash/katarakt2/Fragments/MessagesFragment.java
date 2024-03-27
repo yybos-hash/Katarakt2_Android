@@ -41,11 +41,13 @@ import yybos.hash.katarakt2.Socket.Client;
 import yybos.hash.katarakt2.Socket.Constants;
 import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
 import yybos.hash.katarakt2.Socket.Objects.Anime;
+import yybos.hash.katarakt2.Socket.Objects.Media.Directory;
 import yybos.hash.katarakt2.Socket.Objects.Media.MediaFile;
 import yybos.hash.katarakt2.Socket.Objects.Message.Chat;
 import yybos.hash.katarakt2.Socket.Objects.Message.Command;
 import yybos.hash.katarakt2.Socket.Objects.Message.Message;
 import yybos.hash.katarakt2.Socket.Objects.Message.User;
+import yybos.hash.katarakt2.Socket.Objects.PacketObject;
 
 public class MessagesFragment extends Fragment implements ClientInterface {
     private ConstraintLayout constraintLayout;
@@ -54,7 +56,7 @@ public class MessagesFragment extends Fragment implements ClientInterface {
     private RecyclerView recyclerView;
 
     private MessagesViewAdapter chatAdapter;
-    private List<Message> history;
+    private List<PacketObject> history;
 
     private MainActivity mainActivityInstance;
     private Client client;
@@ -81,7 +83,7 @@ public class MessagesFragment extends Fragment implements ClientInterface {
 
         View root = getView();
 
-        // changed all of this to the onViewCreated because of the back stack (the fragment is not destroyed neither created when its added to the back strack)
+        // moved all of this to the onViewCreated because of the back stack (the fragment is not destroyed neither created when its added to the back stack)
         // but the view is destroyed and created again, so ill be using that
         this.mainActivityInstance = ((MainActivity) requireActivity());
 
@@ -91,7 +93,7 @@ public class MessagesFragment extends Fragment implements ClientInterface {
         // get message history if there are any messages previously sent
         this.history = this.mainActivityInstance.getMessageHistory();
 
-        // client will send message with a timestamp to the server, server generated id in the database and returns message, if message has the same timestamp as any other message in this
+        // client will send message with a timestamp to the server, server generates id in the database and returns message, if message has the same timestamp as any other message in this
         // list, then the message was sent succesfully. This has a tiny, very little, overhead
 
         // listen to incoming messages
@@ -105,7 +107,7 @@ public class MessagesFragment extends Fragment implements ClientInterface {
         ImageView chatsButton = root.findViewById(R.id.chatChatsButton);
         ImageView sendButton = root.findViewById(R.id.chatSendButton);
 
-        this.chatAdapter = new MessagesViewAdapter(this.requireContext(), this.history);
+        this.chatAdapter = new MessagesViewAdapter(this, this.history);
         this.chatAdapter.setHasStableIds(true);
 
         chatsButton.setOnClickListener(this::displayChatsList);
@@ -199,6 +201,10 @@ public class MessagesFragment extends Fragment implements ClientInterface {
         }
 
         this.scrollToLastMessage();
+    }
+
+    public void downloadFile (MediaFile mediaFile) {
+        this.client.downloadFile(mediaFile);
     }
 
     // display things
@@ -522,6 +528,11 @@ public class MessagesFragment extends Fragment implements ClientInterface {
                 this.scrollToLastMessage();
             });
         }
+    }
+
+    @Override
+    public void onDirectoryReceived(Directory directory) {
+
     }
 
     // shits

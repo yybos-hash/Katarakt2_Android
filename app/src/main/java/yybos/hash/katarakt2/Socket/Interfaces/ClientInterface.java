@@ -1,6 +1,7 @@
 package yybos.hash.katarakt2.Socket.Interfaces;
 
 import yybos.hash.katarakt2.Socket.Objects.Anime;
+import yybos.hash.katarakt2.Socket.Objects.Media.Directory;
 import yybos.hash.katarakt2.Socket.Objects.Message.Chat;
 import yybos.hash.katarakt2.Socket.Objects.Message.Command;
 import yybos.hash.katarakt2.Socket.Objects.Media.MediaFile;
@@ -13,4 +14,5 @@ public interface ClientInterface {
     void onAnimeReceived (Anime anime);
 
     void onFileReceived (MediaFile mediaFile);
+    void onDirectoryReceived (Directory directory);
 }

@@ -1,14 +1,14 @@
 package yybos.hash.katarakt2.Socket.Objects;
 
 public class PacketObject {
-    protected Type type;
+    protected int type;
     protected int id;
     protected long date = 0;
 
     public int getId() {
         return this.id;
     }
-    public Type getType () {
+    public int getType () {
         return this.type;
     }
     public long getDate () {
@@ -19,7 +19,7 @@ public class PacketObject {
         this.id = id;
     }
     public void setType (int type) {
-        this.type = Type.getEnumByValue(type);
+        this.type = type;
     }
     public void setDate (long date) {
         this.date = date;

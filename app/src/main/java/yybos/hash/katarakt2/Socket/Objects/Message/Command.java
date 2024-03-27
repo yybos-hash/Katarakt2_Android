@@ -30,14 +30,14 @@ public class Command extends PacketObject {
 
     public static Command getChats () {
         Command from = new Command();
-        from.type = Type.Command;
+        from.type = Type.Command.getValue();
         from.command = "getChats";
 
         return from;
     }
     public static Command getChatHistory (int chatId) {
         Command from = new Command();
-        from.type = Type.Command;
+        from.type = Type.Command.getValue();
         from.command = "getChatHistory";
         from.args.addProperty("chatId", chatId);
 
@@ -45,7 +45,7 @@ public class Command extends PacketObject {
     }
     public static Command setUsername (String username) {
         Command from = new Command();
-        from.type = Type.Command;
+        from.type = Type.Command.getValue();
         from.command = "setUsername";
         from.args.addProperty("username", username);
 
@@ -53,7 +53,7 @@ public class Command extends PacketObject {
     }
     public static Command createChat (String newChat) {
         Command from = new Command();
-        from.type = Type.Command;
+        from.type = Type.Command.getValue();
         from.command = "createChat";
         from.args.addProperty("chat", newChat);
 
@@ -61,7 +61,7 @@ public class Command extends PacketObject {
     }
     public static Command deleteChat (int id) {
         Command from = new Command();
-        from.type = Type.Command;
+        from.type = Type.Command.getValue();
         from.command = "deleteChat";
         from.args.addProperty("chat", id);
 
@@ -69,9 +69,18 @@ public class Command extends PacketObject {
     }
     public static Command prompt (String prompt) {
         Command from = new Command();
-        from.type = Type.Command;
+        from.type = Type.Command.getValue();
         from.command = "cmd";
         from.args.addProperty("prompt", prompt);
+
+        return from;
+    }
+
+    public static Command getDirectories (String path) {
+        Command from = new Command();
+        from.type = Type.Command.getValue();
+        from.command = "getSubs";
+        from.args.addProperty("path", path);
 
         return from;
     }
@@ -80,7 +89,7 @@ public class Command extends PacketObject {
 
     public static Command getAnimeList () {
         Command from = new Command();
-        from.type = Type.Command;
+        from.type = Type.Command.getValue();
         from.command = "getAnimeList";
 
         return from;
@@ -88,7 +97,7 @@ public class Command extends PacketObject {
 
     public static Command toCommand (String command) {
         Command from = new Command();
-        from.type = Type.Command;
+        from.type = Type.Command.getValue();
         from.command = command;
 
         return from;

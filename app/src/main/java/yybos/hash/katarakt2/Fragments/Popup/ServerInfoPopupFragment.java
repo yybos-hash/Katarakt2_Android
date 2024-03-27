@@ -110,15 +110,13 @@ public class ServerInfoPopupFragment extends Fragment {
                 this.args.putString("email", email);
                 this.args.putString("password", password);
 
-                if (!this.serverIp.equals(serverIp) || this.serverPort != serverPort || !this.email.equals(email) || !this.password.equals(password)) {
-                    InputMethodManager inputMethodManager = (InputMethodManager) requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+                InputMethodManager inputMethodManager = (InputMethodManager) requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
 
-                    if (inputMethodManager != null) {
-                        inputMethodManager.hideSoftInputFromWindow(root.getWindowToken(), 0);
-                    }
-
-                    this.destroy();
+                if (inputMethodManager != null) {
+                    inputMethodManager.hideSoftInputFromWindow(root.getWindowToken(), 0);
                 }
+
+                this.destroy();
             }
             catch (NumberFormatException e) {
                 this.mainActivityInstance.showCustomToast("The port was not a number XD", Color.argb(90, 235, 64, 52));

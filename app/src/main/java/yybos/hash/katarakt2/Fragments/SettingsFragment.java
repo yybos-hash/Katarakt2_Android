@@ -54,7 +54,7 @@ public class SettingsFragment extends Fragment {
         this.gestureDetector = new GestureDetector(getContext(), new GestureListener());
 
         // Set onTouchListener on NestedScrollView
-        nestedScrollView.setOnTouchListener((v, event) -> {
+        this.nestedScrollView.setOnTouchListener((v, event) -> {
             // v.performClick();
 
             // Pass the touch event to GestureDetector

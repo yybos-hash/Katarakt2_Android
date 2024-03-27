@@ -40,13 +40,13 @@ public class ChatsViewAdapter extends RecyclerView.Adapter<ChatsViewHolder> {
 
     @NonNull
     @Override
-    public ChatsViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public ChatsViewHolder onCreateViewHolder (@NonNull ViewGroup parent, int viewType) {
         View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.layout_chat, parent, false);
         return new ChatsViewHolder(itemView);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ChatsViewHolder holder, int position) {
+    public void onBindViewHolder (@NonNull ChatsViewHolder holder, int position) {
         Chat chat = this.chats.get(position);
 
         Context context = this.messagesFragmentInstance.requireContext();

@@ -1,5 +1,7 @@
 package yybos.hash.katarakt2.Socket;
 
+import static yybos.hash.katarakt2.Socket.Objects.Media.MediaFile.MediaProcessType.DOWNLOAD;
+
 import android.graphics.Color;
 import android.os.Looper;
 import android.util.Log;
@@ -7,7 +9,6 @@ import android.util.Log;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -18,14 +19,15 @@ import java.util.List;
 import yybos.hash.katarakt2.MainActivity;
 import yybos.hash.katarakt2.Socket.Interfaces.ClientInterface;
 import yybos.hash.katarakt2.Socket.Objects.Anime;
+import yybos.hash.katarakt2.Socket.Objects.Login;
+import yybos.hash.katarakt2.Socket.Objects.Media.Directory;
+import yybos.hash.katarakt2.Socket.Objects.Media.MediaFile;
 import yybos.hash.katarakt2.Socket.Objects.Message.Chat;
 import yybos.hash.katarakt2.Socket.Objects.Message.Command;
-import yybos.hash.katarakt2.Socket.Objects.Login;
-import yybos.hash.katarakt2.Socket.Objects.Media.MediaFile;
 import yybos.hash.katarakt2.Socket.Objects.Message.Message;
+import yybos.hash.katarakt2.Socket.Objects.Message.User;
 import yybos.hash.katarakt2.Socket.Objects.PacketObject;
 import yybos.hash.katarakt2.Socket.Objects.Server;
-import yybos.hash.katarakt2.Socket.Objects.Message.User;
 
 public class Client {
     private final List<ClientInterface> listeners = new ArrayList<>();
@@ -37,6 +39,7 @@ public class Client {
     private int port;
 
     private Utils messageUtils;
+    private Utils mediaUtils;
     private final MainActivity mainActivity;
 
     public User user;
@@ -85,7 +88,7 @@ public class Client {
 
             this.isConnecting = true;
             messageManagerSocket.connect(managerAddress, 4000);
-//            mediaManagerSocket.connect(managerAddress, 4000);
+            mediaManagerSocket.connect(managerAddress, 4000);
             this.isConnecting = false;
 
             if (!messageManagerSocket.isConnected()) {
@@ -94,7 +97,7 @@ public class Client {
             }
 
             new Thread(() -> this.handleMessage(messageManagerSocket)).start();
-//            new Thread(() -> this.handleMedia(mediaManagerSocket)).start();
+            new Thread(() -> this.handleMedia(mediaManagerSocket)).start();
         } catch (Exception e) {
             Log.i("Client Connection", "Deu meme");
             this.mainActivity.showCustomToast("Could not connect to " + this.ipAddress, Color.GRAY);
@@ -239,11 +242,11 @@ public class Client {
         }
     }
     private void handleMedia (Socket client) {
-        Utils mediaUtils = new Utils(client);
+        this.mediaUtils = new Utils(client);
 
         try {
             // send alllejdnaejkdklad
-            mediaUtils.sendObject(Login.toLogin(Constants.version, Constants.mediaPort, this.user.getEmail(), this.user.getPassword()));
+            this.mediaUtils.sendObject(Login.toLogin(Constants.version, Constants.mediaPort, this.user.getEmail(), this.user.getPassword()));
 
             this.isConnected = true;
 
@@ -268,7 +271,7 @@ public class Client {
                                 rawMessage.append(bucket);
                         }
 
-                        int packet = mediaUtils.in.read(Constants.buffer);
+                        int packet = this.mediaUtils.in.read(Constants.buffer);
                         if (packet <= 0) // if the packet bytes count is less or equal to 0 then the client has disconnected, which means that the thread should be terminated
                             throw new IOException("Client connection was abruptly interrupted");
 
@@ -291,28 +294,23 @@ public class Client {
                     // get packet type
                     PacketObject.Type packetType = this.getPacketType(rawMessage.toString());
 
-                    System.out.println(packetType);
                     if (packetType == PacketObject.Type.File) {
                         MediaFile media = MediaFile.fromString(rawMessage.toString());
 
-                        // notify file to listeners
-                        this.notifyFileToListeners(media);
-
-                        System.out.println(media.getFileType());
-                        switch (media.getFileType()) {
+                        switch (media.getProcessType()) {
                             case UPLOAD: {
-                                mediaUtils.out.write(new byte[1]); // separate the json from the actual data
+                                this.mediaUtils.out.write(new byte[1]); // separate the json from the actual data
                                 break;
                             }
                             case DOWNLOAD: {
-                                mediaUtils.out.write(new byte[1]); // separate the json from the actual data
+                                this.mediaUtils.out.write(new byte[1]); // separate the json from the actual data
 
                                 long progress = 0;
                                 int packet;
 
                                 System.out.println("filesize " + media.getSize());
                                 do {
-                                    packet = mediaUtils.in.read(Constants.buffer);
+                                    packet = this.mediaUtils.in.read(Constants.buffer);
                                     progress += packet; // increase progress with each packet size
 
 //                                outputStream.write(packet);
@@ -324,6 +322,8 @@ public class Client {
                                 break;
                             }
                             case PREVIEW: {
+                                // notify file to listeners
+                                this.notifyFileToListeners(media, true);
                                 break;
                             }
                         }
@@ -333,10 +333,15 @@ public class Client {
 
                         // why would I need to redefine it?
                     }
+                    else if (packetType == PacketObject.Type.Directory) {
+                        Directory directory = Directory.fromString(rawMessage.toString());
+
+                        this.notifyDirectoryToListeners(directory);
+                    }
                 }
             }
             catch (Exception e) {
-                mediaUtils.close();
+                this.mediaUtils.close();
 
                 System.out.println("Exception in client");
                 System.out.println(e.getMessage());
@@ -357,8 +362,9 @@ public class Client {
             }
         }
         catch (Exception e) {
-            mediaUtils.close();
+            this.mediaUtils.close();
 
+            System.out.println("error");
             System.out.println(e.getMessage());
 
             this.isConnected = false;
@@ -366,26 +372,37 @@ public class Client {
     }
 
     private void close () {
-        messageUtils.close();
+        if (this.messageUtils != null)
+            this.messageUtils.close();
     }
 
     public String getClientIp () {
+        if (this.messageUtils == null)
+            return "localhost";
+
         return this.messageUtils.client.getInetAddress().getHostAddress();
     }
 
     // methods to send objects
 
-    private void sendPacketObject(PacketObject packet) {
-        if (this.messageUtils == null || !this.isConnected)
+    private void sendPacketObject (PacketObject packet, boolean mediaServer) {
+        Utils utils;
+
+        if (mediaServer)
+            utils = this.mediaUtils;
+        else
+            utils = this.messageUtils;
+
+        if (utils == null || !this.isConnected)
             return;
 
         // checks wheter its on the main thread or not
         if (Looper.myLooper() == Looper.getMainLooper()) {
             // You are on the main thread/UI thread
-            new Thread(() -> this.messageUtils.sendObject(packet)).start();
+            new Thread(() -> utils.sendObject(packet)).start();
         } else {
             // You are not on the main thread
-            this.messageUtils.sendObject(packet);
+            utils.sendObject(packet);
         }
     }
 
@@ -393,31 +410,46 @@ public class Client {
         if (!this.isConnected)
             return;
 
-        this.sendPacketObject(message);
+        this.sendPacketObject(message, false);
     }
     public void sendCommand (Command command) {
         if (!this.isConnected)
             return;
 
-        this.sendPacketObject(command);
+        this.sendPacketObject(command, false);
+    }
+    public void sendCommand (Command command, boolean mediaServer) {
+        if (!this.isConnected)
+            return;
+
+        if (mediaServer)
+            this.sendPacketObject(command, true);
     }
 
     public void getChatHistory (int chatId) {
         this.mainActivity.getChatFragmentInstance().clearChat();
-        this.sendPacketObject(Command.getChatHistory(chatId));
+        this.sendPacketObject(Command.getChatHistory(chatId), false);
     }
     public void getChats () {
-        this.sendPacketObject(Command.getChats());
+        this.sendPacketObject(Command.getChats(), false);
     }
     public void updateUsername (String username) {
-        this.sendPacketObject(Command.setUsername(username));
+        this.sendPacketObject(Command.setUsername(username), false);
     }
 
-    public void downloadFile (String filePath) {
-        // file path is actually the path of the file in the server os
+    public void downloadFile (MediaFile file) {
+        file.setProcessType(DOWNLOAD);
 
+        // checks wheter its on the main thread or not
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            // You are on the main thread/UI thread
+            new Thread(() -> this.mediaUtils.sendObject(file)).start();
+        } else {
+            // You are not on the main thread
+            this.mediaUtils.sendObject(file);
+        }
     }
-    public void uploadFile (File file) {
+    public void uploadFile (MediaFile file) {
 
     }
 
@@ -451,13 +483,21 @@ public class Client {
         for (ClientInterface listener : this.listeners)
             listener.onAnimeReceived(anime);
     }
-    private void notifyFileToListeners (MediaFile mediaFile) {
+    private void notifyFileToListeners (MediaFile mediaFile, boolean addToHistory) {
+        if (addToHistory)
+            // append message to history
+            this.mainActivity.getMessageHistory().add(mediaFile);
+
         for (ClientInterface listener : this.listeners)
             listener.onFileReceived(mediaFile);
+    }
+    private void notifyDirectoryToListeners (Directory directory) {
+        for (ClientInterface listener : this.listeners)
+            listener.onDirectoryReceived(directory);
     }
 
     private PacketObject.Type getPacketType (String json) {
         JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
-        return PacketObject.Type.valueOf(jsonObject.get("type").getAsString());
+        return PacketObject.Type.getEnumByValue(jsonObject.get("type").getAsInt());
     }
 }
